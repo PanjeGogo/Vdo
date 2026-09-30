@@ -4043,7 +4043,10 @@ do
 end
 
 
-SimpleUI:BuildProspectingGUI({
+local GUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/PanjeGogo/Vdo/refs/heads/main/theme/gui.lua"))()
+
+GUI:Build({
+    SimpleUI = SimpleUI,
     PanModule = PanModule,
     Movement = Movement,
     SellModule = SellModule,
