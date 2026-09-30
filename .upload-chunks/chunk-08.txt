@@ -1,0 +1,1000 @@
+    }, Theme)
+
+    local Label = self.ComponentBuilder:CreateLabel(Zones.TextZone, Text, Theme, {
+        ColorTier = "TextPrimary",
+        Size = 14,
+        Order = 1
+    })
+
+    local Description = HasDescription and
+                            self.ComponentBuilder:CreateDescription(Zones.TextZone, DropdownOptions.Description, Theme,
+            2) or nil
+
+    local DisplayContainer = self.Utility:CreateInstance("Frame", {
+        Size = UDim2.new(0.45, -self.Constants.Padding.Large, 1, 0),
+        Position = UDim2.new(0.55, 0, 0, 0),
+        BackgroundTransparency = 1,
+        ZIndex = self.Constants.ZIndex.Overlay
+    }, Zones.Container)
+
+    local Display = self.Utility:CreateInstance("TextButton", {
+        Size = UDim2.new(1, -10, 0, 32),
+        Position = UDim2.new(1, -10, 0.5, 0),
+        AnchorPoint = Vector2.new(1, 0.5),
+        BackgroundColor3 = Theme.Tertiary,
+        BorderSizePixel = 0,
+        Text = "",
+        AutoButtonColor = false,
+        ZIndex = self.Constants.ZIndex.Overlay
+    }, DisplayContainer)
+
+    self.Utility:CreateInstance("UICorner", {
+        CornerRadius = UDim.new(0, self.Constants.Corner.Medium)
+    }, Display)
+
+    local DisplayLabel = self.Utility:CreateInstance("TextLabel", {
+        Size = UDim2.new(1, -32, 1, 0),
+        Position = UDim2.new(0, 10, 0, 0),
+        BackgroundTransparency = 1,
+        Text = "",
+        TextColor3 = Theme.TextPrimary,
+        TextSize = 13,
+        Font = Theme.FontSecondary,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextTruncate = Enum.TextTruncate.AtEnd,
+        ZIndex = self.Constants.ZIndex.Modal
+    }, Display)
+
+    local Arrow = self.Utility:CreateInstance("ImageLabel", {
+        Size = UDim2.new(0, 14, 0, 14),
+        Position = UDim2.new(1, -10, 0.5, 0),
+        AnchorPoint = Vector2.new(1, 0.5),
+        BackgroundTransparency = 1,
+        Image = "rbxassetid://10709790948",
+        ImageColor3 = Theme.TextPrimary,
+        ZIndex = self.Constants.ZIndex.Modal
+    }, Display)
+
+    local ThemeBindings = {
+        [Zones.Container] = {
+            BackgroundColor3 = "Secondary",
+            BackgroundTransparency = "TransparencySecondary"
+        },
+        [Label] = {
+            TextColor3 = "TextPrimary",
+            Font = "FontSecondary"
+        },
+        [Display] = {
+            BackgroundColor3 = "Tertiary"
+        },
+        [DisplayLabel] = {
+            TextColor3 = "TextPrimary",
+            Font = "FontSecondary"
+        },
+        [Arrow] = {
+            ImageColor3 = "TextPrimary"
+        }
+    }
+    if Description then
+        ThemeBindings[Description] = {
+            TextColor3 = "TextSecondary",
+            Font = "FontSecondary"
+        }
+    end
+    if Window then
+        self.ThemeManager:RegisterMultiple(Window, ThemeBindings)
+    end
+
+    local ScreenGui = Page
+    while ScreenGui do
+        if ScreenGui:IsA("ScreenGui") then
+            break
+        end
+        ScreenGui = ScreenGui.Parent
+    end
+    if not ScreenGui then
+        EH:Guard(false, "CreateDropdown", "Failed to find ScreenGui parent", EH.Levels.ERROR)
+        return nil
+    end
+
+    local ListContainer = self.Utility:CreateInstance("Frame", {
+        Size = UDim2.new(0, Display.AbsoluteSize.X, 0, 0),
+        BackgroundColor3 = Theme.Tertiary,
+        BackgroundTransparency = Theme.TransparencyPrimary,
+        BorderSizePixel = 0,
+        Visible = false,
+        ZIndex = self.Constants.ZIndex.Modal,
+        ClipsDescendants = true
+    }, ScreenGui)
+
+    self.Utility:CreateInstance("UICorner", {
+        CornerRadius = UDim.new(0, self.Constants.Corner.Medium)
+    }, ListContainer)
+
+    local SearchBox = self.Utility:CreateInstance("TextBox", {
+        Size = UDim2.new(1, -8, 0, 30),
+        Position = UDim2.new(0, 4, 0, 4),
+        BackgroundColor3 = Theme.Tertiary,
+        BorderSizePixel = 0,
+        Text = "",
+        PlaceholderText = "Search...",
+        TextColor3 = Theme.TextPrimary,
+        PlaceholderColor3 = Theme.TextSecondary,
+        TextSize = 13,
+        Font = Theme.FontSecondary,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ClearTextOnFocus = false,
+        Visible = false,
+        ZIndex = self.Constants.ZIndex.Modal + 1
+    }, ListContainer)
+
+    self.Utility:CreateInstance("UICorner", {
+        CornerRadius = UDim.new(0, self.Constants.Corner.Medium)
+    }, SearchBox)
+
+    self.Utility:CreateInstance("UIPadding", {
+        PaddingLeft = UDim.new(0, self.Constants.Padding.Medium),
+        PaddingRight = UDim.new(0, self.Constants.Padding.Medium)
+    }, SearchBox)
+
+    if Window then
+        self.ThemeManager:RegisterMultiple(Window, {
+            [ListContainer] = {
+                BackgroundColor3 = "Tertiary",
+                BackgroundTransparency = "TransparencyPrimary"
+            },
+            [SearchBox] = {
+                BackgroundColor3 = "Tertiary",
+                TextColor3 = "TextPrimary",
+                PlaceholderColor3 = "TextSecondary",
+                Font = "FontSecondary"
+            }
+        })
+    end
+
+    local ScrollList = self.Utility:CreateInstance("ScrollingFrame", {
+        Size = UDim2.new(1, 0, 1, -38),
+        Position = UDim2.new(0, 0, 0, 38),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ScrollBarThickness = 0,
+        ScrollBarImageColor3 = Theme.TextSecondary,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        ZIndex = self.Constants.ZIndex.Modal + 1,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y
+    }, ListContainer)
+
+    self.Utility:CreateInstance("UIListLayout", {
+        FillDirection = Enum.FillDirection.Vertical,
+        HorizontalAlignment = Enum.HorizontalAlignment.Center,
+        VerticalAlignment = Enum.VerticalAlignment.Top,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, self.Constants.Spacing.Tight)
+    }, ScrollList)
+
+    self.Utility:CreateInstance("UIPadding", {
+        PaddingTop = UDim.new(0, IsMobile and 0 or 1),
+        PaddingBottom = UDim.new(0, IsMobile and 0 or 1),
+        PaddingLeft = UDim.new(0, IsMobile and 0 or 1),
+        PaddingRight = UDim.new(0, IsMobile and 0 or 1)
+    }, ScrollList)
+
+    local NormalizedOptions, OptionDataMap = self.DropdownManager:NormalizeOptions(Options)
+    local SelectedValues = self.DropdownManager:InitializeSelection(DefaultValue, IsMultiSelect, OptionDataMap)
+    local IsOpen = false
+    local IsToggling = false
+    local InputBlocker = nil
+    local TargetHeight = 0
+    local HasSearch = false
+    local InputConnection
+    local DisplayState = "Base"
+
+    local function UpdateDisplayColor()
+        local CurrentTheme = Window and self.ThemeManager:GetCurrentTheme(Window) or Theme
+        local ColorGoal = CurrentTheme.Tertiary
+        local ArrowRotation = 0
+
+        if DisplayState == "Hover" then
+            ColorGoal = CurrentTheme.TertiaryHover
+        elseif DisplayState == "Active" then
+            ColorGoal = CurrentTheme.TertiaryActive
+            ArrowRotation = 180
+        elseif DisplayState == "Pressed" then
+            ColorGoal = CurrentTheme.TertiaryPressed
+        end
+
+        TweenService:Create(Display, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
+            BackgroundColor3 = ColorGoal
+        }):Play()
+
+        TweenService:Create(Arrow, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+            Rotation = ArrowRotation
+        }):Play()
+    end
+
+    if not IsMobile then
+        Display.MouseEnter:Connect(function()
+            if not IsOpen then
+                DisplayState = "Hover"
+                UpdateDisplayColor()
+            end
+        end)
+        Display.MouseLeave:Connect(function()
+            if not IsOpen then
+                DisplayState = "Base"
+                UpdateDisplayColor()
+            end
+        end)
+        Display.MouseButton1Down:Connect(function()
+            DisplayState = "Pressed"
+            UpdateDisplayColor()
+        end)
+        Display.MouseButton1Up:Connect(function()
+            if not IsOpen then
+                DisplayState = "Hover"
+            end
+            UpdateDisplayColor()
+        end)
+    end
+
+    local function CloseDropdown()
+        if InputBlocker then
+            InputBlocker:Destroy()
+            InputBlocker = nil
+        end
+        if not IsOpen then
+            return
+        end
+        IsOpen = false
+        DisplayState = "Base"
+        UpdateDisplayColor()
+
+        TweenService:Create(ListContainer, TweenInfo.new(self.Constants.Animation.Fast, Enum.EasingStyle.Quad,
+            Enum.EasingDirection.In), {
+            Size = UDim2.new(0, Display.AbsoluteSize.X, 0, 0)
+        }):Play()
+        task.wait(self.Constants.Animation.Fast)
+        ListContainer.Visible = false
+        SearchBox.Text = ""
+
+        if InputConnection then
+            InputConnection:Disconnect()
+            InputConnection = nil
+        end
+    end
+
+    local function UpdateDisplay()
+        self.DropdownManager:UpdateDisplayText(DisplayLabel, SelectedValues, IsMultiSelect)
+    end
+
+    local function SerializeSelection()
+        if IsMultiSelect then
+            local values = {}
+            for OptionText, Selected in pairs(SelectedValues) do
+                if Selected then
+                    table.insert(values, OptionText)
+                end
+            end
+            table.sort(values)
+            return values
+        end
+        return SelectedValues
+    end
+
+    local function FilterOptions(Query)
+        Query = Query:lower()
+        for _, Child in ipairs(ScrollList:GetChildren()) do
+            if Child:IsA("Frame") then
+                local OptionButton = Child:FindFirstChild("TextButton")
+                if OptionButton then
+                    if Query == "" or OptionButton.Text:lower():find(Query, 1, true) then
+                        Child.Visible = true
+                    else
+                        Child.Visible = false
+                    end
+                end
+            end
+        end
+    end
+
+    local function UpdateListPosition()
+        local DisplayPos = Display.AbsolutePosition
+        local DisplaySize = Display.AbsoluteSize
+        local ScreenSize = ScreenGui.AbsoluteSize
+        local BaseMaxHeight = 160
+        local Layout = ScrollList:FindFirstChildOfClass("UIListLayout")
+        local ContentHeight = Layout and Layout.AbsoluteContentSize.Y + 16 or 0
+        HasSearch = ContentHeight > BaseMaxHeight
+        SearchBox.Visible = HasSearch
+
+        if HasSearch then
+            ScrollList.Size = UDim2.new(1, 0, 1, -38)
+            ScrollList.Position = UDim2.new(0, 0, 0, 38)
+        else
+            ScrollList.Size = UDim2.new(1, 0, 1, 0)
+            ScrollList.Position = UDim2.new(0, 0, 0, 0)
+        end
+
+        TargetHeight = math.min(BaseMaxHeight, ContentHeight) + (HasSearch and 38 or 0)
+
+        local YPos = DisplayPos.Y + DisplaySize.Y + 4
+        if YPos + TargetHeight > ScreenSize.Y then
+            YPos = DisplayPos.Y - TargetHeight - 4
+        end
+
+        ListContainer.Size = UDim2.new(0, DisplaySize.X, 0, 0)
+        ListContainer.Position = UDim2.new(0, DisplayPos.X, 0, YPos)
+    end
+
+    local function CreateOption(OptionText, Index)
+        local CurrentTheme = Window and self.ThemeManager:GetCurrentTheme(Window) or Theme
+        local OptionContainer = self.Utility:CreateInstance("Frame", {
+            Size = UDim2.new(1, -8, 0, IsMobile and 24 or 30),
+            BackgroundTransparency = 1,
+            ZIndex = self.Constants.ZIndex.Modal + 2,
+            LayoutOrder = Index
+        }, ScrollList)
+
+        local OptionButton = self.Utility:CreateInstance("TextButton", {
+            Size = UDim2.new(1, 0, 1, 0),
+            Position = UDim2.new(0, 0, 0, 0),
+            BackgroundColor3 = CurrentTheme.Tertiary,
+            BorderSizePixel = 0,
+            Text = OptionText,
+            TextColor3 = CurrentTheme.TextPrimary,
+            TextSize = IsMobile and 8 or 13,
+            Font = CurrentTheme.FontSecondary,
+            TextTruncate = Enum.TextTruncate.SplitWord,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            AutoButtonColor = false,
+            ZIndex = self.Constants.ZIndex.Modal + 3
+        }, OptionContainer)
+
+        self.Utility:CreateInstance("UICorner", {
+            CornerRadius = UDim.new(0, self.Constants.Corner.Small)
+        }, OptionButton)
+
+        self.Utility:CreateInstance("UIPadding", {
+            PaddingLeft = UDim.new(0, IsMobile and 4 or 6),
+            PaddingRight = UDim.new(0, IsMobile and 2 or self.Constants.Padding.Small)
+        }, OptionButton)
+
+        local Indicator = self.Utility:CreateInstance("Frame", {
+            Size = UDim2.new(0, IsMobile and 1 or 2, 0.35, 0),
+            Position = UDim2.new(0, IsMobile and 0.1 or 2, 0.5, 0),
+            AnchorPoint = Vector2.new(0, 0.5),
+            BackgroundColor3 = CurrentTheme.Accent,
+            BorderSizePixel = 0,
+            Visible = false,
+            ZIndex = self.Constants.ZIndex.Modal + 4
+        }, OptionContainer)
+
+        self.Utility:CreateInstance("UICorner", {
+            CornerRadius = UDim.new(1, 0)
+        }, Indicator)
+
+        if Window then
+            self.ThemeManager:RegisterElement(Window, OptionButton, {
+                BackgroundColor3 = "Tertiary",
+                TextColor3 = "TextPrimary",
+                Font = "FontSecondary"
+            })
+            self.ThemeManager:RegisterElement(Window, Indicator, {
+                BackgroundColor3 = "Accent"
+            })
+        end
+
+        if IsMultiSelect then
+            local function UpdateIndicator()
+                Indicator.Visible = SelectedValues[OptionText] or false
+            end
+            OptionButton.Activated:Connect(function()
+                SelectedValues[OptionText] = not SelectedValues[OptionText]
+                UpdateIndicator()
+                UpdateDisplay()
+                local Selected = SimpleUI.DropdownManager:GetSelectedData(SelectedValues, IsMultiSelect, OptionDataMap)
+                SimpleUI.SaveManager:WriteBinding(SaveBinding, SerializeSelection())
+                if Callback then
+                    EH:Try(function()
+                        Callback(Selected)
+                    end)
+                end
+                ChangedEvent:Fire(Selected)
+            end)
+            UpdateIndicator()
+        else
+            Indicator.Visible = SelectedValues == OptionText
+            OptionButton.Activated:Connect(function()
+                for _, Child in ipairs(ScrollList:GetChildren()) do
+                    if Child:IsA("Frame") then
+                        local Ind = Child:FindFirstChild("Frame")
+                        if Ind then
+                            Ind.Visible = false
+                        end
+                    end
+                end
+                SelectedValues = OptionText
+                Indicator.Visible = true
+                UpdateDisplay()
+                CloseDropdown()
+                local Selected = SimpleUI.DropdownManager:GetSelectedData(SelectedValues, IsMultiSelect, OptionDataMap)
+                SimpleUI.SaveManager:WriteBinding(SaveBinding, SerializeSelection())
+                if Callback then
+                    EH:Try(function()
+                        Callback(Selected)
+                    end)
+                end
+                ChangedEvent:Fire(Selected)
+            end)
+        end
+
+        if not IsMobile then
+            OptionButton.MouseEnter:Connect(function()
+                local CurrentTheme = Window and SimpleUI.ThemeManager:GetCurrentTheme(Window) or Theme
+                TweenService:Create(OptionButton, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
+                    BackgroundColor3 = CurrentTheme.TertiaryHover
+                }):Play()
+            end)
+            OptionButton.MouseLeave:Connect(function()
+                local CurrentTheme = Window and SimpleUI.ThemeManager:GetCurrentTheme(Window) or Theme
+                TweenService:Create(OptionButton, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
+                    BackgroundColor3 = CurrentTheme.Tertiary
+                }):Play()
+            end)
+            OptionButton.MouseButton1Down:Connect(function()
+                local CurrentTheme = Window and SimpleUI.ThemeManager:GetCurrentTheme(Window) or Theme
+                OptionButton.BackgroundColor3 = CurrentTheme.TertiaryPressed
+            end)
+            OptionButton.MouseButton1Up:Connect(function()
+                local CurrentTheme = Window and SimpleUI.ThemeManager:GetCurrentTheme(Window) or Theme
+                OptionButton.BackgroundColor3 = CurrentTheme.TertiaryHover
+            end)
+        end
+    end
+
+    for Index, OptionText in ipairs(NormalizedOptions) do
+        CreateOption(OptionText, Index)
+    end
+
+    SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        FilterOptions(SearchBox.Text)
+    end)
+
+    UpdateDisplay()
+    UpdateDisplayColor()
+
+    if SaveBinding.HasValue and SaveBinding.ApplyCallback and Callback then
+        EH:Try(function()
+            Callback(SimpleUI.DropdownManager:GetSelectedData(SelectedValues, IsMultiSelect, OptionDataMap))
+        end)
+    end
+
+    Display.Activated:Connect(function()
+        if IsToggling then
+            return
+        end
+        IsToggling = true
+        if IsOpen then
+            CloseDropdown()
+        else
+            IsOpen = true
+            InputBlocker = EH:Try(function()
+                return self.Utility:CreateInstance("TextButton", {
+                    Name = "DropdownInputBlocker",
+                    Size = UDim2.fromScale(1, 1),
+                    Position = UDim2.fromScale(0, 0),
+                    Text = "",
+                    BackgroundTransparency = 1,
+                    AutoButtonColor = false,
+                    ZIndex = self.Constants.ZIndex.Modal - 1
+                }, ScreenGui)
+            end)
+            if InputBlocker then
+                InputBlocker.Activated:Connect(function()
+                    CloseDropdown()
+                end)
+            end
+            DisplayState = "Active"
+            UpdateDisplayColor()
+            UpdateListPosition()
+            ListContainer.Visible = true
+            TweenService:Create(ListContainer, TweenInfo.new(self.Constants.Animation.Normal, Enum.EasingStyle.Quad,
+                Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, Display.AbsoluteSize.X, 0, TargetHeight)
+            }):Play()
+            task.wait()
+            InputConnection = UserInputService.InputBegan:Connect(function(Input)
+                if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType ==
+                    Enum.UserInputType.Touch then
+                    local MousePos = Input.Position
+                    local ListPos = ListContainer.AbsolutePosition
+                    local ListSize = ListContainer.AbsoluteSize
+                    local DisplayPos = Display.AbsolutePosition
+                    local DisplaySize = Display.AbsoluteSize
+                    local InList = MousePos.X >= ListPos.X and MousePos.X <= ListPos.X + ListSize.X and MousePos.Y >=
+                                       ListPos.Y and MousePos.Y <= ListPos.Y + ListSize.Y
+                    local InDisplay = MousePos.X >= DisplayPos.X and MousePos.X <= DisplayPos.X + DisplaySize.X and
+                                          MousePos.Y >= DisplayPos.Y and MousePos.Y <= DisplayPos.Y + DisplaySize.Y
+                    if not InList and not InDisplay and not IsToggling then
+                        CloseDropdown()
+                    end
+                end
+            end)
+        end
+        task.wait(0.1)
+        IsToggling = false
+    end)
+
+    return {
+        GetValue = function(self)
+            return SimpleUI.DropdownManager:GetSelectedData(SelectedValues, IsMultiSelect, OptionDataMap)
+        end,
+        SetValue = function(self, Value)
+            if IsMultiSelect then
+                SelectedValues = {}
+                if EH:ValidateType(Value, "table", "Value", "Dropdown:SetValue") then
+                    for _, V in ipairs(Value) do
+                        local Normalized = type(V) == "table" and
+                                               (V.Text or V.text or V.Label or V.label or tostring(V)) or tostring(V)
+                        if OptionDataMap[Normalized] then
+                            SelectedValues[Normalized] = true
+                        end
+                    end
+                end
+            else
+                local Normalized = type(Value) == "table" and
+                                       (Value.Text or Value.text or Value.Label or Value.label or tostring(Value)) or
+                                       tostring(Value)
+                if OptionDataMap[Normalized] then
+                    SelectedValues = Normalized
+                end
+            end
+            for _, Child in ipairs(ScrollList:GetChildren()) do
+                if Child:IsA("Frame") then
+                    local Ind = Child:FindFirstChild("Frame")
+                    local Opt = Child:FindFirstChild("TextButton")
+                    if Ind and Opt then
+                        if IsMultiSelect then
+                            Ind.Visible = SelectedValues[Opt.Text] or false
+                        else
+                            Ind.Visible = SelectedValues == Opt.Text
+                        end
+                    end
+                end
+            end
+            UpdateDisplay()
+            SimpleUI.SaveManager:WriteBinding(SaveBinding, SerializeSelection())
+            ChangedEvent:Fire(Value)
+            if Callback then
+                EH:Try(function()
+                    Callback(SimpleUI.DropdownManager:GetSelectedData(SelectedValues, IsMultiSelect, OptionDataMap))
+                end)
+            end
+        end,
+        SetOptions = function(self, NewOptions)
+            if not EH:ValidateType(NewOptions, "table", "NewOptions", "Dropdown:SetOptions") then
+                return
+            end
+            for _, Child in ipairs(ScrollList:GetChildren()) do
+                if Child:IsA("Frame") then
+                    Child:Destroy()
+                end
+            end
+            Options = NewOptions
+            NormalizedOptions, OptionDataMap = SimpleUI.DropdownManager:NormalizeOptions(Options)
+            for Index, OptionText in ipairs(NormalizedOptions) do
+                CreateOption(OptionText, Index)
+            end
+            if IsMultiSelect then
+                local ValidSelected = {}
+                for Value, Enabled in pairs(SelectedValues) do
+                    if OptionDataMap[Value] then
+                        ValidSelected[Value] = Enabled
+                    end
+                end
+                SelectedValues = ValidSelected
+            else
+                if not OptionDataMap[SelectedValues] and NormalizedOptions[1] then
+                    SelectedValues = nil
+                end
+            end
+            UpdateDisplay()
+        end,
+        SetDescription = function(self, NewDescription)
+            local HadDescription = Description ~= nil and Description.Visible
+            local HasNewDescription = NewDescription and NewDescription ~= ""
+            if Description and NewDescription then
+                Description.Text = NewDescription
+                Description.Visible = true
+            elseif Description and not NewDescription then
+                Description.Visible = false
+            elseif not Description and NewDescription then
+                Description = SimpleUI.ComponentBuilder:CreateDescription(Zones.TextZone, NewDescription, Theme, 2)
+                if Window then
+                    SimpleUI.ThemeManager:RegisterElement(Window, Description, {
+                        TextColor3 = "TextSecondary",
+                        Font = "FontSecondary"
+                    })
+                end
+            end
+            if HadDescription ~= HasNewDescription then
+                SimpleUI.ComponentBuilder:UpdateDescriptionPadding(Zones, HasNewDescription)
+            end
+        end,
+        Close = function(self)
+            CloseDropdown()
+        end,
+        GetElements = function(self)
+            return {
+                Container = Zones.Container,
+                Label = Label,
+                Description = Description,
+                Display = Display,
+                DisplayLabel = DisplayLabel,
+                Arrow = Arrow,
+                ListContainer = ListContainer,
+                SearchBox = SearchBox,
+                ScrollList = ScrollList
+            }
+        end,
+        Changed = ChangedEvent.Event
+    }
+end
+
+function SimpleUI:CreateNotification(Options)
+    local EH = self.ErrorHandler
+    Options = Options or {}
+    if not EH:ValidateType(Options, "table", "Options", "CreateNotification") then
+        Options = {}
+    end
+
+    local Title = Options.Title
+    if not EH:ValidateType(Title, "string", "Title", "CreateNotification") then
+        Title = "Notification"
+    end
+
+    local Description = Options.Description
+    if Description and not EH:ValidateType(Description, "string", "Description", "CreateNotification") then
+        Description = nil
+    end
+
+    local Duration = Options.Duration or 5
+    if not EH:ValidateType(Duration, "number", "Duration", "CreateNotification") then
+        Duration = 5
+    else
+        Duration = math.clamp(Duration, 0, 300)
+    end
+
+    local Tag = Options.Tag
+    if Tag and not EH:ValidateType(Tag, "string", "Tag", "CreateNotification") then
+        Tag = nil
+    end
+
+    local Type = Options.Type
+    if Type and not EH:ValidateType(Type, "string", "Type", "CreateNotification") then
+        Type = nil
+    end
+
+    local Theme = type(Options.Theme) == "string" and (self.Themes[Options.Theme] or self.Themes.DefaultTheme) or
+                      type(Options.Theme) == "table" and Options.Theme or self.Themes.DefaultTheme
+
+    local Color = Options.Color
+    if Color and typeof(Color) ~= "Color3" then
+        Color = Theme.Accent
+    else
+        Color = Color or Theme.Accent
+    end
+
+    local Callback = Options.Callback
+    if Callback and not EH:ValidateType(Callback, "function", "Callback", "CreateNotification") then
+        Callback = nil
+    end
+
+    local Closable = Options.Closable ~= false
+
+    self.NotificationManager:Initialize()
+
+    local NotificationUI = self.NotificationManager:CreateNotificationUI({
+        Title = Title,
+        Description = Description,
+        Theme = Theme,
+        Color = Color,
+        Type = Type,
+        Tag = Tag,
+        Callback = Callback,
+        Closable = Closable,
+        Duration = Duration
+    })
+
+    return {
+        Dismiss = function(self)
+            SimpleUI.NotificationManager:Dismiss(NotificationUI.Container)
+        end,
+        SetTitle = function(self, NewTitle)
+            if EH:ValidateType(NewTitle, "string", "NewTitle", "Notification:SetTitle") then
+                NotificationUI.Title.Text = NewTitle
+            end
+        end,
+        SetDescription = function(self, NewDescription)
+            if NotificationUI.Description then
+                if NewDescription and
+                    EH:ValidateType(NewDescription, "string", "NewDescription", "Notification:SetDescription") then
+                    NotificationUI.Description.Text = NewDescription
+                    NotificationUI.Description.Visible = true
+                else
+                    NotificationUI.Description.Visible = false
+                end
+            end
+        end,
+        SetTag = function(self, NewTag)
+            if EH:ValidateType(NewTag, "string", "NewTag", "Notification:SetTag") and NotificationUI.Tag then
+                NotificationUI.Tag.Text = NewTag
+            end
+        end,
+        GetElements = function(self)
+            return {
+                Container = NotificationUI.Container,
+                Card = NotificationUI.Card,
+                Title = NotificationUI.Title,
+                Description = NotificationUI.Description,
+                Tag = NotificationUI.Tag,
+                Content = NotificationUI.Content,
+                ProgressFill = NotificationUI.ProgressFill
+            }
+        end
+    }
+end
+
+-- ================= STANDALONE PREREQUISITES =================
+
+local TaskManager = (function()
+local TaskManager = {
+    mainTask = nil,
+    currentSubTask = nil,
+    nextSubTask = nil,
+    taskQueue = {},
+    isRunning = false
+}
+
+function TaskManager:requestTask(taskName, priority)
+    priority = priority or 1
+    if self.mainTask == taskName then
+        return false
+    end
+    table.insert(self.taskQueue, {
+        name = taskName,
+        priority = priority,
+        timestamp = tick()
+    })
+    table.sort(self.taskQueue, function(a, b)
+        if a.priority == b.priority then
+            return a.timestamp < b.timestamp
+        end
+        return a.priority > b.priority
+    end)
+    return true
+end
+
+function TaskManager:startTask(taskName)
+    if self.mainTask and self.mainTask ~= taskName then
+        return false
+    end
+    self.mainTask = taskName
+    self.isRunning = true
+    return true
+end
+
+function TaskManager:finishTask(taskName)
+    if self.mainTask == taskName then
+        self.mainTask = nil
+        self.currentSubTask = nil
+        self.nextSubTask = nil
+        self.isRunning = false
+        if # self.taskQueue > 0 then
+            local nextTask = table.remove(self.taskQueue, 1)
+            task.wait(1)
+        end
+    end
+end
+
+function TaskManager:pauseTask(taskName)
+    if self.mainTask == taskName then
+        self.isPaused = true
+        return true
+    end
+    return false
+end
+
+function TaskManager:resumeTask(taskName)
+    if self.mainTask == taskName then
+        self.isPaused = false
+        return true
+    end
+    return false
+end
+
+function TaskManager:canRun(taskName)
+    return (not self.isRunning or self.mainTask == taskName) and not self.isPaused
+end
+
+function TaskManager:waitForTurn(taskName, maxWait)
+    maxWait = maxWait or 30
+    local startTime = tick()
+    while not self:canRun(taskName) and (tick() - startTime) < maxWait do
+        task.wait(1)
+    end
+    return self:canRun(taskName)
+end
+
+function TaskManager:setCurrentTask(subtask)
+    self.currentSubTask = subtask
+end
+
+function TaskManager:setNextTask(subtask)
+    self.nextSubTask = subtask
+end
+
+function TaskManager:getCurrentTask()
+    return self.currentSubTask
+end
+
+function TaskManager:getNextTask()
+    return self.nextSubTask
+end
+
+function TaskManager:getMainTask()
+    return self.mainTask
+end
+
+function TaskManager:clearSubTasks()
+    self.currentSubTask = nil
+    self.nextSubTask = nil
+end
+
+return TaskManager
+
+end)()
+
+local ShoppingMart = (function()
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+
+local function getSafeContainer()
+    if gethui then
+        local success, result = pcall(gethui)
+        if success and result then
+            return result
+        end
+    end
+
+    local success, coreGui = pcall(function()
+        return self:getService("CoreGui")
+    end)
+    if success and coreGui then
+        return coreGui
+    end
+
+    return game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+end
+
+local playerGui = getSafeContainer()
+
+local Theme = {
+    Background = Color3.fromRGB(14, 14, 16),
+    Surface = Color3.fromRGB(22, 22, 26),
+    SurfaceAlt = Color3.fromRGB(30, 30, 34),
+    TextPrimary = Color3.fromRGB(240, 240, 245),
+    TextSecondary = Color3.fromRGB(150, 150, 160),
+    Accent = Color3.fromRGB(255, 107, 0),
+    AccentDark = Color3.fromRGB(200, 80, 0),
+    Success = Color3.fromRGB(52, 199, 89),
+    Danger = Color3.fromRGB(255, 59, 48),
+    Stroke = Color3.fromRGB(45, 45, 50),
+    ShardPrice = Color3.fromRGB(245, 170, 210)
+}
+
+local NumberFormatter = {}
+NumberFormatter.Suffixes = {{1e21, "Sx"}, {1e18, "Qi"}, {1e15, "Qa"}, {1e12, "T"}, {1e9, "B"}, {1e6, "M"}, {1e3, "k"}}
+
+function NumberFormatter.Format(n)
+    n = math.floor(n + 0.5)
+    for _, data in ipairs(NumberFormatter.Suffixes) do
+        if n >= data[1] then
+            local value = math.floor((n / data[1]) * 100) / 100
+            local str = tostring(value):gsub("%.0+$", ""):gsub("(%..-)0+$", "%1")
+            return str .. data[2]
+        end
+    end
+    return tostring(n)
+end
+
+local ItemCatalog = {}
+
+function ItemCatalog.Build()
+    local catalog = {
+        Pans = {},
+        Shovels = {},
+        Sluices = {},
+        Potions = {},
+        Totems = {},
+        Others = {}
+    }
+
+    local icons = {
+        Pans = "rbxassetid://10789587520",
+        Shovels = "rbxassetid://10098013519",
+        Sluices = "rbxassetid://7964618035",
+        Potions = "rbxassetid://16181402439",
+        Totems = "rbxassetid://18624930841",
+        Utility = "rbxassetid://12392897830"
+    }
+
+    local purchRoot = Workspace:FindFirstChild("Purchasable")
+    if not purchRoot then
+        return catalog
+    end
+
+    for _, region in ipairs(purchRoot:GetChildren()) do
+        if region:IsA("Folder") and #region:GetChildren() > 0 then
+            for _, item in ipairs(region:GetChildren()) do
+                if item:IsA("Model") then
+                    local shopItem = item:FindFirstChild("ShopItem")
+                    if shopItem then
+                        local stats = shopItem:FindFirstChild("Stats")
+                        if stats then
+                            local isShardPrice = shopItem:GetAttribute("Price") == nil and
+                                                     shopItem:GetAttribute("ShardPrice") ~= nil
+                            local price = shopItem:GetAttribute(isShardPrice and "ShardPrice" or "Price")
+                            local description = shopItem:GetAttribute("Description")
+                            local category
+
+                            if price then
+                                category = ItemCatalog.DetermineCategory(item, stats)
+                            else
+                                category = "Others"
+                            end
+
+                            local iconImage = icons[category] or icons.Utility
+
+                            if price then
+                                table.insert(catalog[category], {
+                                    name = item.Name,
+                                    description = description,
+                                    price = price,
+                                    currency = isShardPrice and "ƒ" or "$",
+                                    category = category,
+                                    model = item,
+                                    shopItem = shopItem,
+                                    iconImage = iconImage
+                                })
+                            else
+                                for attrName, attrValue in pairs(shopItem:GetAttributes()) do
+                                    if typeof(attrValue) == "number" and attrName ~= "Price" and attrName ~=
+                                        "ShardPrice" then
+                                        table.insert(catalog.Others, {
+                                            name = item.Name,
+                                            description = description,
+                                            price = attrValue,
+                                            currency = attrName,
+                                            category = "Others",
+                                            model = item,
+                                            shopItem = shopItem,
+                                            iconImage = icons.Utility
+                                        })
+                                        break
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return catalog
+end
+
+local CATEGORY_FOLDERS = {
+    Pans = ReplicatedStorage.Items.Pans,
+    Totems = ReplicatedStorage.Items.Totems,
