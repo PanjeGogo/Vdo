@@ -1,0 +1,1000 @@
+                CornerRadius = UDim.new(1, 0)
+            }, ResizeHandle)
+
+            local IconImage = SimpleUI.Utility:CreateInstance("ImageLabel", {
+                Size = UDim2.fromScale(0.7, 0.7),
+                Position = UDim2.fromScale(0.5, 0.5),
+                AnchorPoint = Vector2.new(0.5, 0.5),
+                BackgroundTransparency = 1,
+                Image = "rbxassetid://16898613613",
+                ImageRectSize = Vector2.new(48, 48),
+                ImageRectOffset = Vector2.new(967, 49),
+                ImageColor3 = Theme.TextPrimary or Color3.fromRGB(200, 200, 210),
+                ZIndex = SimpleUI.Constants.ZIndex.Modal + 1
+            }, ResizeHandle)
+
+            local StartPos
+            local FrameSize
+            local FramePos
+            local Dragging = false
+            local Changed
+
+            ResizeHandle.InputBegan:Connect(function(input)
+                if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~=
+                    Enum.UserInputType.Touch then
+                    return
+                end
+
+                StartPos = input.Position
+                FrameSize = MainFrame.Size
+                FramePos = MainFrame.Position
+                Dragging = true
+
+                if IsCenter then
+                    MainFrame.AnchorPoint = Vector2.new(0, 0)
+                    MainFrame.Position = UDim2.new(FramePos.X.Scale, FramePos.X.Offset - FrameSize.X.Offset / 2,
+                        FramePos.Y.Scale, FramePos.Y.Offset - FrameSize.Y.Offset / 2)
+                    FramePos = MainFrame.Position
+                end
+
+                Changed = input.Changed:Connect(function()
+                    if input.UserInputState ~= Enum.UserInputState.End then
+                        return
+                    end
+
+                    Dragging = false
+                    if IsCenter then
+                        local centerX = FramePos.X.Offset + MainFrame.Size.X.Offset / 2
+                        local centerY = FramePos.Y.Offset + MainFrame.Size.Y.Offset / 2
+                        MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+                        MainFrame.Position = UDim2.new(FramePos.X.Scale, centerX, FramePos.Y.Scale, centerY)
+                    end
+                    if Changed and Changed.Connected then
+                        Changed:Disconnect()
+                        Changed = nil
+                    end
+                end)
+            end)
+
+            UserInputService.InputChanged:Connect(function(input)
+                if not MainFrame.Visible then
+                    Dragging = false
+                    if Changed and Changed.Connected then
+                        Changed:Disconnect()
+                        Changed = nil
+                    end
+                    return
+                end
+
+                if Dragging and
+                    (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType ==
+                        Enum.UserInputType.Touch) then
+                    local Delta = input.Position - StartPos
+
+                    local newWidth = math.clamp(FrameSize.X.Offset + Delta.X, SimpleUI.Constants.Window.MinSize.X,
+                        SimpleUI.Constants.Window.MaxSize.X)
+                    local newHeight = math.clamp(FrameSize.Y.Offset + Delta.Y, SimpleUI.Constants.Window.MinSize.Y,
+                        SimpleUI.Constants.Window.MaxSize.Y)
+
+                    MainFrame.Size = UDim2.new(FrameSize.X.Scale, newWidth, FrameSize.Y.Scale, newHeight)
+                end
+            end)
+
+            return ResizeHandle, IconImage, {
+                [ResizeHandle] = {
+                    BackgroundColor3 = "TextSecondary"
+                },
+                [IconImage] = {
+                    ImageColor3 = "TextPrimary"
+                }
+            }
+        end
+
+        function SimpleUI.WindowBuilder:SetupScrollUpdates(WindowInstance)
+            task.defer(function()
+                local function UpdateContainers()
+                    task.wait()
+                    WindowInstance.Elements.TabsContainer = SimpleUI.ScrollManager:Update(WindowInstance.Elements
+                                                                                              .TabsContainer)
+                    if WindowInstance.ActivePage then
+                        WindowInstance.ActivePage = SimpleUI.ScrollManager:Update(WindowInstance.ActivePage)
+                    end
+                end
+                UpdateContainers()
+                WindowInstance.Elements.TabsContainer.ChildAdded:Connect(UpdateContainers)
+                WindowInstance.Elements.TabsContainer.ChildRemoved:Connect(UpdateContainers)
+                WindowInstance.Elements.ContentsContainer.ChildAdded:Connect(function(Child)
+                    if Child:IsA("Frame") then
+                        local Layout = Child:FindFirstChildWhichIsA("UIListLayout")
+                        if Layout then
+                            Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                                if Child == WindowInstance.ActivePage then
+                                    WindowInstance.ActivePage = SimpleUI.ScrollManager:Update(Child)
+                                end
+                            end)
+                        end
+                        local function UpdatePage()
+                            if Child == WindowInstance.ActivePage then
+                                task.wait()
+                                WindowInstance.ActivePage = SimpleUI.ScrollManager:Update(Child)
+                            end
+                        end
+                        Child.ChildAdded:Connect(UpdatePage)
+                        Child.ChildRemoved:Connect(UpdatePage)
+                    end
+                end)
+            end)
+        end
+    end
+
+    SimpleUI.SectionManager = {}
+    do
+        function SimpleUI.SectionManager:CreateSimpleSection(Page, Text, Options, Theme, Window, Style)
+            local LABEL_HEIGHT = 26
+            local TEXT_SIZE = Options.TextSize or 19
+            local LABEL_TEXT = Text or "Section"
+
+            local StyleDefs = {
+                sidebar = {
+                    SectionHeight = LABEL_HEIGHT + 4,
+                    Indent = 10
+                },
+                notch = {
+                    SectionHeight = LABEL_HEIGHT + 4,
+                    Indent = 16
+                },
+                filled = {
+                    SectionHeight = LABEL_HEIGHT + 8,
+                    Indent = 14
+                },
+                inset = {
+                    SectionHeight = LABEL_HEIGHT + 6,
+                    Indent = 10
+                },
+                stepped = {
+                    SectionHeight = LABEL_HEIGHT + 10,
+                    Indent = 8
+                },
+                panel = {
+                    SectionHeight = LABEL_HEIGHT + 8,
+                    Indent = 14
+                }
+            }
+
+            local Def = StyleDefs[Style] or {
+                SectionHeight = LABEL_HEIGHT + 4,
+                Indent = 0
+            }
+            local SECTION_HEIGHT = Def.SectionHeight
+            local INDENT = Def.Indent
+            local LabelY = math.floor((SECTION_HEIGHT - LABEL_HEIGHT) / 2)
+
+            local AccentElement, AccentBindings, ExtraElements = nil, {}, {}
+
+            local Section = SimpleUI.Utility:CreateInstance("Frame", {
+                Name = "Section",
+                Size = UDim2.new(1, 0, 0, SECTION_HEIGHT),
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                ClipsDescendants = false,
+                ZIndex = SimpleUI.Constants.ZIndex.Control
+            }, Page)
+
+            local LabelProperties, LabelBindings = SimpleUI.Utility:ApplyTheme({
+                Size = UDim2.new(1, -INDENT, 0, LABEL_HEIGHT),
+                Position = UDim2.new(0, INDENT, 0, LabelY),
+                Text = LABEL_TEXT,
+                TextSize = TEXT_SIZE,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                BackgroundTransparency = 1,
+                ZIndex = SimpleUI.Constants.ZIndex.Overlay
+            }, {
+                Font = "FontPrimary",
+                TextColor3 = "TextActive"
+            }, Theme)
+            local Label = SimpleUI.Utility:CreateInstance("TextLabel", LabelProperties, Section)
+
+            if Style == "sidebar" then
+                local Thickness = Options.BarThickness or 3
+                local BarProps, BarBindings = SimpleUI.Utility:ApplyTheme({
+                    Size = UDim2.new(0, Thickness, 0, LABEL_HEIGHT),
+                    Position = UDim2.new(0, 0, 0, LabelY),
+                    BorderSizePixel = 0,
+                    ZIndex = SimpleUI.Constants.ZIndex.Overlay
+                }, {
+                    BackgroundColor3 = "Accent"
+                }, Theme)
+                local Bar = SimpleUI.Utility:CreateInstance("Frame", BarProps, Section)
+                SimpleUI.Utility:CreateInstance("UICorner", {
+                    CornerRadius = UDim.new(1, 0)
+                }, Bar)
+                AccentElement, AccentBindings = Bar, BarBindings
+
+            elseif Style == "notch" then
+                local NOTCH_SIZE = 6
+                local NotchProps, NotchBindings = SimpleUI.Utility:ApplyTheme({
+                    Size = UDim2.new(0, NOTCH_SIZE, 0, NOTCH_SIZE),
+                    Position = UDim2.new(0, 2, 0, LabelY + math.floor((LABEL_HEIGHT - NOTCH_SIZE) / 2)),
+                    Rotation = 45,
+                    BorderSizePixel = 0,
+                    ZIndex = SimpleUI.Constants.ZIndex.Overlay
+                }, {
+                    BackgroundColor3 = "Accent"
+                }, Theme)
+                local Notch = SimpleUI.Utility:CreateInstance("Frame", NotchProps, Section)
+                AccentElement, AccentBindings = Notch, NotchBindings
+
+            elseif Style == "filled" then
+                local STRIPE_WIDTH = Options.StripeWidth or 4
+
+                local BgProps, BgBindings = SimpleUI.Utility:ApplyTheme({
+                    Size = UDim2.new(1, 0, 1, 0),
+                    Position = UDim2.new(0, 0, 0, 0),
+                    BackgroundTransparency = 0.88,
+                    BorderSizePixel = 0,
+                    ZIndex = SimpleUI.Constants.ZIndex.Overlay - 2
+                }, {
+                    BackgroundColor3 = "Accent"
+                }, Theme)
+                local Bg = SimpleUI.Utility:CreateInstance("Frame", BgProps, Section)
+                SimpleUI.Utility:CreateInstance("UICorner", {
+                    CornerRadius = UDim.new(0, 4)
+                }, Bg)
+                SimpleUI.Utility:CreateInstance("UIGradient", {
+                    Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0),
+                                                       NumberSequenceKeypoint.new(0.6, 0),
+                                                       NumberSequenceKeypoint.new(1, 1)}),
+                    Rotation = 0
+                }, Bg)
+
+                local StripeProps, StripeBindings = SimpleUI.Utility:ApplyTheme({
+                    Size = UDim2.new(0, STRIPE_WIDTH, 1, 0),
+                    Position = UDim2.new(0, 0, 0, 0),
+                    BorderSizePixel = 0,
+                    ZIndex = SimpleUI.Constants.ZIndex.Overlay - 1
+                }, {
+                    BackgroundColor3 = "Accent"
+                }, Theme)
+                local Stripe = SimpleUI.Utility:CreateInstance("Frame", StripeProps, Section)
+                SimpleUI.Utility:CreateInstance("UICorner", {
+                    CornerRadius = UDim.new(0, 2)
+                }, Stripe)
+
+                AccentElement, AccentBindings = Stripe, StripeBindings
+                table.insert(ExtraElements, {
+                    Element = Bg,
+                    Bindings = BgBindings
+                })
+
+            elseif Style == "inset" then
+                local FillProps, FillBindings = SimpleUI.Utility:ApplyTheme({
+                    Size = UDim2.new(1, 0, 1, 0),
+                    Position = UDim2.new(0, 0, 0, 0),
+                    BackgroundTransparency = 0.92,
+                    BorderSizePixel = 0,
+                    ZIndex = SimpleUI.Constants.ZIndex.Overlay - 2
+                }, {
+                    BackgroundColor3 = "Accent"
+                }, Theme)
+                local Fill = SimpleUI.Utility:CreateInstance("Frame", FillProps, Section)
+
+                local TopProps, TopBindings = SimpleUI.Utility:ApplyTheme({
+                    Size = UDim2.new(1, 0, 0, 1),
+                    Position = UDim2.new(0, 0, 0, 0),
+                    BackgroundTransparency = 0.5,
+                    BorderSizePixel = 0,
+                    ZIndex = SimpleUI.Constants.ZIndex.Overlay - 1
+                }, {
+                    BackgroundColor3 = "Accent"
+                }, Theme)
+                local TopLine = SimpleUI.Utility:CreateInstance("Frame", TopProps, Section)
+
+                local BotProps, BotBindings = SimpleUI.Utility:ApplyTheme({
+                    Size = UDim2.new(1, 0, 0, 1),
+                    Position = UDim2.new(0, 0, 1, -1),
+                    BackgroundTransparency = 0.5,
+                    BorderSizePixel = 0,
+                    ZIndex = SimpleUI.Constants.ZIndex.Overlay - 1
+                }, {
+                    BackgroundColor3 = "Accent"
+                }, Theme)
+                local BotLine = SimpleUI.Utility:CreateInstance("Frame", BotProps, Section)
+
+                AccentElement, AccentBindings = TopLine, TopBindings
+                table.insert(ExtraElements, {
+                    Element = BotLine,
+                    Bindings = BotBindings
+                })
+                table.insert(ExtraElements, {
+                    Element = Fill,
+                    Bindings = FillBindings
+                })
+
+            elseif Style == "stepped" then
+                local LINE_Y = SECTION_HEIGHT - 3
+                local CAP_HEIGHT = 3
+                local CAP_WIDTH = Options.CapWidth or 36
+
+                local CapProps, CapBindings = SimpleUI.Utility:ApplyTheme({
+                    Size = UDim2.new(0, CAP_WIDTH, 0, CAP_HEIGHT),
+                    Position = UDim2.new(0, 0, 0, LINE_Y - CAP_HEIGHT + 1),
+                    BorderSizePixel = 0,
+                    ZIndex = SimpleUI.Constants.ZIndex.Overlay
+                }, {
+                    BackgroundColor3 = "Accent"
+                }, Theme)
+                local Cap = SimpleUI.Utility:CreateInstance("Frame", CapProps, Section)
+                SimpleUI.Utility:CreateInstance("UICorner", {
+                    CornerRadius = UDim.new(0, 2)
+                }, Cap)
+
+                local HairProps, HairBindings = SimpleUI.Utility:ApplyTheme({
+                    Size = UDim2.new(1, -CAP_WIDTH, 0, 1),
+                    Position = UDim2.new(0, CAP_WIDTH, 0, LINE_Y),
+                    BackgroundTransparency = 0.55,
+                    BorderSizePixel = 0,
+                    ZIndex = SimpleUI.Constants.ZIndex.Overlay - 1
+                }, {
+                    BackgroundColor3 = "Accent"
+                }, Theme)
+                local Hair = SimpleUI.Utility:CreateInstance("Frame", HairProps, Section)
+
+                AccentElement, AccentBindings = Cap, CapBindings
+                table.insert(ExtraElements, {
+                    Element = Hair,
+                    Bindings = HairBindings
+                })
+
+            elseif Style == "panel" then
+                local STRIPE_WIDTH = Options.StripeWidth or 3
+
+                local BgProps, BgBindings = SimpleUI.Utility:ApplyTheme({
+                    Size = UDim2.new(1, 0, 1, 0),
+                    Position = UDim2.new(0, 0, 0, 0),
+                    BackgroundTransparency = 0.78,
+                    BorderSizePixel = 0,
+                    ZIndex = SimpleUI.Constants.ZIndex.Overlay - 2
+                }, {
+                    BackgroundColor3 = "Accent"
+                }, Theme)
+                local Bg = SimpleUI.Utility:CreateInstance("Frame", BgProps, Section)
+                SimpleUI.Utility:CreateInstance("UIGradient", {
+                    Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0),
+                                                       NumberSequenceKeypoint.new(0.45, 0),
+                                                       NumberSequenceKeypoint.new(1, 1)}),
+                    Rotation = 0
+                }, Bg)
+
+                local StripeProps, StripeBindings = SimpleUI.Utility:ApplyTheme({
+                    Size = UDim2.new(0, STRIPE_WIDTH, 1, 0),
+                    Position = UDim2.new(0, 0, 0, 0),
+                    BorderSizePixel = 0,
+                    ZIndex = SimpleUI.Constants.ZIndex.Overlay - 1
+                }, {
+                    BackgroundColor3 = "Accent"
+                }, Theme)
+                local Stripe = SimpleUI.Utility:CreateInstance("Frame", StripeProps, Section)
+
+                local BottomProps, BottomBindings = SimpleUI.Utility:ApplyTheme({
+                    Size = UDim2.new(1, 0, 0, 1),
+                    Position = UDim2.new(0, 0, 1, -1),
+                    BackgroundTransparency = 0.65,
+                    BorderSizePixel = 0,
+                    ZIndex = SimpleUI.Constants.ZIndex.Overlay - 1
+                }, {
+                    BackgroundColor3 = "Accent"
+                }, Theme)
+                local Bottom = SimpleUI.Utility:CreateInstance("Frame", BottomProps, Section)
+
+                AccentElement, AccentBindings = Stripe, StripeBindings
+                table.insert(ExtraElements, {
+                    Element = Bg,
+                    Bindings = BgBindings
+                })
+                table.insert(ExtraElements, {
+                    Element = Bottom,
+                    Bindings = BottomBindings
+                })
+            end
+
+            if Window then
+                local Batch = {
+                    [Label] = LabelBindings
+                }
+                if AccentElement then
+                    Batch[AccentElement] = AccentBindings
+                end
+                for _, Entry in ipairs(ExtraElements) do
+                    Batch[Entry.Element] = Entry.Bindings
+                end
+                SimpleUI.ThemeManager:RegisterMultiple(Window, Batch)
+            end
+
+            return {
+                SetText = function(self, NewText)
+                    Label.Text = NewText
+                end,
+
+                SetTextSize = function(self, Size)
+                    Label.TextSize = Size
+                end,
+
+                SetVisible = function(self, Visible)
+                    Section.Visible = Visible
+                end,
+
+                GetElements = function(self)
+                    return {
+                        Section = Section,
+                        Label = Label,
+                        Accent = AccentElement
+                    }
+                end
+            }
+        end
+
+        function SimpleUI.SectionManager:CreateBoxSection(Page, Text, Options, Theme, Window)
+            if not Page or not Page.Parent then
+                SimpleUI.ErrorHandler:Guard(false, "CreateBoxSection", "Page is nil or unparented",
+                    SimpleUI.ErrorHandler.Levels.ERROR)
+                return nil
+            end
+            Options = type(Options) == "table" and Options or {}
+            Theme = type(Theme) == "table" and Theme or SimpleUI.Themes.DefaultTheme
+            Text = type(Text) == "string" and Text or "Section"
+
+            local U = SimpleUI.Utility
+            local TM = SimpleUI.ThemeManager
+            local CORNER = SimpleUI.Constants.Corner.Medium
+            local PAD = SimpleUI.Constants.Padding
+            local ZI = SimpleUI.Constants.ZIndex
+            local HEADER_H = 36
+            local TWEEN_INFO = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+            local IsExpanded = Options.DefaultExpanded ~= false
+
+            local function GetWindowScale()
+                if Window and Window.Scale and typeof(Window.Scale) == "Instance" then
+                    local ok, scale = pcall(function()
+                        return Window.Scale.Scale
+                    end)
+                    if ok and type(scale) == "number" and scale > 0 then
+                        return scale
+                    end
+                end
+                return 1
+            end
+
+            local function Tween(Object, Properties)
+                if not Object or not Object.Parent then
+                    return
+                end
+                local ok, err = pcall(function()
+                    TweenService:Create(Object, TWEEN_INFO, Properties):Play()
+                end)
+                if not ok then
+                    SimpleUI.ErrorHandler:Guard(false, "CreateBoxSection:Tween", tostring(err),
+                        SimpleUI.ErrorHandler.Levels.WARN)
+                end
+            end
+
+            local Section = U:CreateInstance("Frame", {
+                Name = "BoxSection",
+                Size = UDim2.new(1, 0, 0, HEADER_H),
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                ClipsDescendants = false,
+                ZIndex = ZI.Control
+            }, Page)
+
+            local Border = U:CreateInstance("Frame", {
+                Name = "Border",
+                Size = UDim2.new(1, 0, 0, HEADER_H),
+                Position = UDim2.new(0, 0, 0, 0),
+                BackgroundColor3 = Theme.BoxBackground or Theme.Secondary,
+                BackgroundTransparency = Theme.TransparencySecondary,
+                BorderSizePixel = 0,
+                ZIndex = ZI.Control
+            }, Section)
+            U:CreateInstance("UICorner", {
+                CornerRadius = UDim.new(0, CORNER)
+            }, Border)
+
+            local Stroke = U:CreateInstance("UIStroke", {
+                Color = Theme.Separator,
+                Thickness = 1,
+                Transparency = Theme.SeparatorTransparency,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+            }, Border)
+
+            local HeaderContainer = U:CreateInstance("Frame", {
+                Name = "HeaderContainer",
+                Size = UDim2.new(1, 0, 0, HEADER_H),
+                BackgroundTransparency = 1,
+                ZIndex = ZI.Control + 1
+            }, Border)
+            U:CreateInstance("UIPadding", {
+                PaddingLeft = UDim.new(0, PAD.Medium),
+                PaddingRight = UDim.new(0, PAD.Medium)
+            }, HeaderContainer)
+
+            local HeaderContent = U:CreateInstance("Frame", {
+                Name = "HeaderContent",
+                Size = UDim2.new(1, -(20 + PAD.Medium), 1, 0),
+                BackgroundTransparency = 1,
+                ZIndex = ZI.Control + 1
+            }, HeaderContainer)
+            U:CreateInstance("UIListLayout", {
+                FillDirection = Enum.FillDirection.Horizontal,
+                VerticalAlignment = Enum.VerticalAlignment.Center,
+                Padding = UDim.new(0, PAD.Medium)
+            }, HeaderContent)
+
+            local IconContainer = nil
+            if Options.Icon then
+                IconContainer = U:CreateInstance("Frame", {
+                    Name = "IconContainer",
+                    Size = UDim2.new(0, 20, 0, 20),
+                    BackgroundTransparency = 1,
+                    ZIndex = ZI.Control + 1,
+                    LayoutOrder = 1
+                }, HeaderContent)
+
+                local rawIcon = Options.Icon
+                local iconData = SimpleUI.IconManager:WrapIcon(
+                    type(rawIcon) == "table" and rawIcon or {
+                        Image = rawIcon
+                    })
+
+                if iconData then
+                    U:CreateInstance("ImageLabel", {
+                        Name = "Icon",
+                        Size = UDim2.new(1, 0, 1, 0),
+                        BackgroundTransparency = 1,
+                        Image = iconData.Url,
+                        ImageColor3 = (type(rawIcon) == "table" and rawIcon.ImageColor3) or Theme.TextPrimary,
+                        ImageRectOffset = iconData.ImageRectOffset,
+                        ImageRectSize = iconData.ImageRectSize,
+                        ZIndex = ZI.Control + 1
+                    }, IconContainer)
+                end
+            end
+
+            local Title = U:CreateInstance("TextLabel", {
+                Name = "Title",
+                Size = UDim2.new(1, 0, 1, 0),
+                BackgroundTransparency = 1,
+                Text = Text,
+                TextColor3 = Theme.TextActive,
+                Font = Theme.FontPrimary,
+                TextSize = type(Options.TextSize) == "number" and Options.TextSize or 15,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Center,
+                TextTruncate = Enum.TextTruncate.AtEnd,
+                ZIndex = ZI.Control + 1,
+                LayoutOrder = 2
+            }, HeaderContent)
+
+            local Arrow = U:CreateInstance("ImageLabel", {
+                Name = "Arrow",
+                Size = UDim2.new(0, 12, 0, 12),
+                Position = UDim2.new(1, 0, 0.5, 0),
+                AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundTransparency = 1,
+                Image = "rbxassetid://10709790948",
+                ImageColor3 = Theme.TextPrimary,
+                Rotation = IsExpanded and 0 or -90,
+                ZIndex = ZI.Control + 1
+            }, HeaderContainer)
+
+            local Content = U:CreateInstance("Frame", {
+                Name = "Content",
+                Size = UDim2.new(1, 0, 0, 0),
+                Position = UDim2.new(0, 0, 0, HEADER_H),
+                BackgroundTransparency = 1,
+                ClipsDescendants = true,
+                ZIndex = ZI.Control + 1
+            }, Border)
+
+            Content:SetAttribute("IsDualScroll", false)
+
+            local ContentPadding = U:CreateInstance("UIPadding", {
+                PaddingTop = UDim.new(0, PAD.Medium),
+                PaddingBottom = UDim.new(0, PAD.Large),
+                PaddingLeft = UDim.new(0, PAD.Medium),
+                PaddingRight = UDim.new(0, PAD.Medium)
+            }, Content)
+
+            local ListLayout = U:CreateInstance("UIListLayout", {
+                Padding = UDim.new(0, SimpleUI.Constants.Spacing.Loose),
+                SortOrder = Enum.SortOrder.LayoutOrder
+            }, Content)
+
+            local ClickButton = U:CreateInstance("TextButton", {
+                Name = "ClickButton",
+                Size = UDim2.new(1, 0, 1, 0),
+                BackgroundTransparency = 1,
+                Text = "",
+                AutoButtonColor = false,
+                ZIndex = ZI.Modal
+            }, HeaderContainer)
+
+            local function CalculateContentHeight()
+                local scale = GetWindowScale()
+                local logicalContent = ListLayout.AbsoluteContentSize.Y / scale
+                return logicalContent + ContentPadding.PaddingTop.Offset + ContentPadding.PaddingBottom.Offset
+            end
+
+            local function SetExpandedSize()
+                if not IsExpanded then
+                    return
+                end
+                local contentH = CalculateContentHeight()
+                local totalH = HEADER_H + contentH
+                Tween(Content, {
+                    Size = UDim2.new(1, 0, 0, contentH)
+                })
+                Tween(Border, {
+                    Size = UDim2.new(1, 0, 0, totalH)
+                })
+                Tween(Section, {
+                    Size = UDim2.new(1, 0, 0, totalH)
+                })
+            end
+
+            local function SetCollapsedSize()
+                Tween(Content, {
+                    Size = UDim2.new(1, 0, 0, 0)
+                })
+                Tween(Border, {
+                    Size = UDim2.new(1, 0, 0, HEADER_H)
+                })
+                Tween(Section, {
+                    Size = UDim2.new(1, 0, 0, HEADER_H)
+                })
+            end
+
+            local ToggleDebounce = false
+
+            local function Toggle()
+                if ToggleDebounce then
+                    return
+                end
+                ToggleDebounce = true
+                task.delay(0.1, function()
+                    ToggleDebounce = false
+                end)
+
+                IsExpanded = not IsExpanded
+                Tween(Arrow, {
+                    Rotation = IsExpanded and 0 or -90
+                })
+                if IsExpanded then
+                    SetExpandedSize()
+                else
+                    SetCollapsedSize()
+                end
+            end
+
+            ClickButton.Activated:Connect(Toggle)
+
+            local resizePending = false
+            local function RequestResize()
+                if not IsExpanded or resizePending then
+                    return
+                end
+                resizePending = true
+                task.defer(function()
+                    resizePending = false
+                    if Section.Parent then
+                        SetExpandedSize()
+                    end
+                end)
+            end
+
+            Content.ChildAdded:Connect(RequestResize)
+            Content.ChildRemoved:Connect(RequestResize)
+            ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(RequestResize)
+
+            if Window and Window.Scale and typeof(Window.Scale) == "Instance" then
+                Window.Scale:GetPropertyChangedSignal("Scale"):Connect(function()
+                    if IsExpanded and Section.Parent then
+                        local contentH = CalculateContentHeight()
+                        local totalH = HEADER_H + contentH
+                        Content.Size = UDim2.new(1, 0, 0, contentH)
+                        Border.Size = UDim2.new(1, 0, 0, totalH)
+                        Section.Size = UDim2.new(1, 0, 0, totalH)
+                    end
+                end)
+            end
+
+            if IsExpanded then
+                task.defer(SetExpandedSize)
+            end
+
+            if Window then
+                local themeTargets = {
+                    [Border] = {
+                        BackgroundColor3 = "BoxBackground",
+                        BackgroundTransparency = "TransparencySecondary"
+                    },
+                    [Stroke] = {
+                        Color = "Separator",
+                        Transparency = "SeparatorTransparency"
+                    },
+                    [Title] = {
+                        TextColor3 = "TextActive",
+                        Font = "FontPrimary"
+                    },
+                    [Arrow] = {
+                        ImageColor3 = "TextPrimary"
+                    }
+                }
+
+                if IconContainer then
+                    local iconEl = IconContainer:FindFirstChild("Icon")
+                    if iconEl then
+                        local hasExplicitColor = type(Options.Icon) == "table" and Options.Icon.ImageColor3 ~= nil
+                        if not hasExplicitColor then
+                            themeTargets[iconEl] = {
+                                ImageColor3 = "TextPrimary"
+                            }
+                        end
+                    end
+                end
+
+                TM:RegisterMultiple(Window, themeTargets)
+            end
+
+            return {
+                Container = Content,
+                Section = Section,
+                Header = HeaderContainer,
+                Title = Title,
+                Arrow = Arrow,
+                IconContainer = IconContainer,
+
+                SetExpanded = function(_, value)
+                    if type(value) ~= "boolean" then
+                        return
+                    end
+                    if value ~= IsExpanded then
+                        Toggle()
+                    end
+                end,
+
+                IsExpanded = function()
+                    return IsExpanded
+                end,
+
+                Refresh = function()
+                    if IsExpanded then
+                        SetExpandedSize()
+                    end
+                end,
+
+                SetTitle = function(_, newText)
+                    if type(newText) == "string" then
+                        Title.Text = newText
+                    end
+                end
+            }
+        end
+    end
+
+    SimpleUI.IconManager = {}
+    do
+        function SimpleUI.IconManager:WrapIcon(IconInput)
+            if not IconInput then
+                return nil
+            end
+
+            if type(IconInput) == "table" and IconInput.Image then
+                return {
+                    Url = IconInput.Image,
+                    ImageRectOffset = IconInput.ImageRectOffset or Vector2.zero,
+                    ImageRectSize = IconInput.ImageRectSize or Vector2.zero
+                }
+            end
+
+            return {
+                Url = tostring(IconInput),
+                ImageRectOffset = Vector2.zero,
+                ImageRectSize = Vector2.zero
+            }
+        end
+    end
+
+    SimpleUI.NotificationManager = {}
+    do
+        local ActiveNotifications = {}
+
+        function SimpleUI.NotificationManager:Initialize()
+            if self.Initialized then
+                return
+            end
+            self.Initialized = true
+            self.Container = nil
+            self.ScreenGui = nil
+        end
+
+        function SimpleUI.NotificationManager:GetScreenGui()
+            if self.ScreenGui and self.ScreenGui.Parent then
+                return self.ScreenGui
+            end
+
+            local ScreenGui = SimpleUI.Utility:CreateInstance("ScreenGui", {
+                Name = SimpleUI.Utility:GenerateId(),
+                ResetOnSpawn = false,
+                ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+                DisplayOrder = SimpleUI.Constants.ZIndex.Notification
+            })
+
+            SimpleUI.Utility:ParentUI(ScreenGui)
+            self.ScreenGui = ScreenGui
+            return ScreenGui
+        end
+
+        function SimpleUI.NotificationManager:GetContainer()
+            if self.Container and self.Container.Parent then
+                return self.Container
+            end
+
+            local ScreenGui = self:GetScreenGui()
+            local Scale = SimpleUI.Utility:IsMobile() and 0.5 or 1
+
+            local Parent = SimpleUI.Utility:CreateInstance("Frame", {
+                Name = SimpleUI.Utility:GenerateId(),
+                Size = UDim2.fromScale(1, 1),
+                Position = UDim2.fromScale(0, 0),
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                ZIndex = SimpleUI.Constants.ZIndex.Notification
+            }, ScreenGui)
+
+            SimpleUI.Utility:CreateInstance("UIScale", {
+                Scale = Scale
+            }, Parent)
+
+            self.Container = Parent
+
+            local Holder = SimpleUI.Utility:CreateInstance("Frame", {
+                Name = SimpleUI.Utility:GenerateId(),
+                Position = UDim2.new(1, -20, 0, 20),
+                AnchorPoint = Vector2.new(1, 0),
+                Size = UDim2.new(0, 360, 1, -40),
+                BackgroundTransparency = 1,
+                ZIndex = SimpleUI.Constants.ZIndex.Notification
+            }, Parent)
+
+            SimpleUI.Utility:CreateInstance("UIListLayout", {
+                FillDirection = Enum.FillDirection.Vertical,
+                VerticalAlignment = Enum.VerticalAlignment.Top,
+                HorizontalAlignment = Enum.HorizontalAlignment.Right,
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Padding = UDim.new(0, 10)
+            }, Holder)
+
+            pcall(protectgui, Parent)
+
+            return Parent
+        end
+
+        function SimpleUI.NotificationManager:GetHolder()
+            local Container = self:GetContainer()
+            for _, Child in ipairs(Container:GetChildren()) do
+                if Child:IsA("Frame") then
+                    local Layout = Child:FindFirstChildOfClass("UIListLayout")
+                    if Layout then
+                        return Child
+                    end
+                end
+            end
+            return Container
+        end
+
+        function SimpleUI.NotificationManager:CreateNotificationUI(Config)
+            local Theme = SimpleUI.Themes.Obsidian
+            local Holder = self:GetHolder()
+            local IsMobile = SimpleUI.Utility:IsMobile()
+            local HasDuration = Config.Duration and Config.Duration > 0
+
+            local TypeColors = {
+                Default = Theme.Accent,
+                Info = Color3.fromRGB(30, 144, 255),
+                Success = Color3.fromRGB(40, 187, 109),
+                Warning = Color3.fromRGB(255, 193, 7),
+                Error = Color3.fromRGB(220, 60, 69)
+            }
+            local TypeTags = {
+                Default = "NOTICE",
+                Info = "INFO",
+                Success = "SUCCESS",
+                Warning = "WARNING",
+                Error = "ERROR"
+            }
+
+            local Accent = TypeColors[Config.Type] or Config.Color or Theme.Accent
+            local LightAccent = Accent:Lerp(Color3.new(1, 1, 1), 0.4)
+            local TagText = Config.Tag or TypeTags[Config.Type] or "NOTICE"
+            local BasePad = IsMobile and 8 or 10
+            local SidePad = IsMobile and 10 or 12
+
+            local Notification = SimpleUI.Utility:CreateInstance("Frame", {
+                Name = SimpleUI.Utility:GenerateId(),
+                Size = UDim2.new(1, 0, 0, 0),
+                BackgroundColor3 = Theme.Secondary,
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                ClipsDescendants = false,
+                ZIndex = SimpleUI.Constants.ZIndex.Notification,
+                LayoutOrder = tick()
+            }, Holder)
+
+            local AccentBar = SimpleUI.Utility:CreateInstance("Frame", {
+                Name = SimpleUI.Utility:GenerateId(),
+                Size = UDim2.new(0, 3, 1, 0),
+                BackgroundColor3 = Accent,
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                ZIndex = SimpleUI.Constants.ZIndex.Notification + 1
+            }, Notification)
+
+            local Shadow = SimpleUI.Utility:CreateInstance("ImageLabel", {
+                Name = SimpleUI.Utility:GenerateId(),
+                AnchorPoint = Vector2.new(0.5, 0.5),
+                Position = UDim2.new(0.5, 0, 0.5, 0),
+                Size = UDim2.new(1, 20, 1, 20),
+                BackgroundTransparency = 1,
+                Image = "rbxassetid://7717391613",
+                ImageColor3 = Color3.new(0, 0, 0),
+                ImageTransparency = 1,
+                ScaleType = Enum.ScaleType.Slice,
+                SliceCenter = Rect.new(100, 100, 100, 100),
+                ZIndex = SimpleUI.Constants.ZIndex.Notification - 1
+            }, Notification)
+
+            local Content = SimpleUI.Utility:CreateInstance("Frame", {
+                Name = SimpleUI.Utility:GenerateId(),
+                Position = UDim2.new(0, 3, 0, 0),
+                Size = UDim2.new(1, -3, 1, 0),
+                BackgroundTransparency = 1,
+                ZIndex = SimpleUI.Constants.ZIndex.Notification + 2
+            }, Notification)
+
+            SimpleUI.Utility:CreateInstance("UIPadding", {
+                PaddingTop = UDim.new(0, BasePad),
+                PaddingBottom = UDim.new(0, BasePad),
+                PaddingLeft = UDim.new(0, SidePad),
+                PaddingRight = UDim.new(0, IsMobile and 26 or 30)
+            }, Content)
+
+            local TextContainer = SimpleUI.Utility:CreateInstance("Frame", {
+                Name = SimpleUI.Utility:GenerateId(),
+                Size = UDim2.new(1, 0, 1, 0),
+                BackgroundTransparency = 1,
+                ZIndex = SimpleUI.Constants.ZIndex.Notification + 2
+            }, Content)
+
+            SimpleUI.Utility:CreateInstance("UIListLayout", {
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                VerticalAlignment = Enum.VerticalAlignment.Center,
+                Padding = UDim.new(0, IsMobile and 2 or 3)
+            }, TextContainer)
+
+            local TitleRow = SimpleUI.Utility:CreateInstance("Frame", {
+                Name = SimpleUI.Utility:GenerateId(),
+                Size = UDim2.new(1, Config.Closable ~= false and -(IsMobile and 22 or 26) or 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.Y,
+                BackgroundTransparency = 1,
+                LayoutOrder = 1,
+                ZIndex = SimpleUI.Constants.ZIndex.Notification + 2
+            }, TextContainer)
+
+            SimpleUI.Utility:CreateInstance("UIListLayout", {
+                FillDirection = Enum.FillDirection.Horizontal,
+                VerticalAlignment = Enum.VerticalAlignment.Center,
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Padding = UDim.new(0, 5)
+            }, TitleRow)
+
+            local TitleLabel = SimpleUI.Utility:CreateInstance("TextLabel", {
