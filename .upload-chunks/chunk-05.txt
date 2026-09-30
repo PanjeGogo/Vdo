@@ -1,0 +1,1000 @@
+                Name = SimpleUI.Utility:GenerateId(),
+                Size = UDim2.new(0, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.XY,
+                BackgroundTransparency = 1,
+                Text = Config.Title or "Notification",
+                TextColor3 = Theme.TextActive,
+                TextTransparency = 1,
+                TextSize = IsMobile and 12 or 13,
+                Font = Theme.FontPrimary,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextWrapped = false,
+                RichText = true,
+                LineHeight = 1.1,
+                LayoutOrder = 1,
+                ZIndex = SimpleUI.Constants.ZIndex.Notification + 3
+            }, TitleRow)
+
+            local Tag = SimpleUI.Utility:CreateInstance("TextLabel", {
+                Name = SimpleUI.Utility:GenerateId(),
+                Size = UDim2.new(0, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.XY,
+                BackgroundColor3 = Accent,
+                BackgroundTransparency = 1,
+                Text = TagText,
+                TextColor3 = LightAccent,
+                TextTransparency = 1,
+                TextSize = IsMobile and 8 or 9,
+                Font = Theme.FontPrimary,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                LayoutOrder = 2,
+                ZIndex = SimpleUI.Constants.ZIndex.Notification + 3
+            }, TitleRow)
+
+            SimpleUI.Utility:CreateInstance("UICorner", {
+                CornerRadius = UDim.new(0, 3)
+            }, Tag)
+            SimpleUI.Utility:CreateInstance("UIPadding", {
+                PaddingLeft = UDim.new(0, 5),
+                PaddingRight = UDim.new(0, 5),
+                PaddingTop = UDim.new(0, 2),
+                PaddingBottom = UDim.new(0, 2)
+            }, Tag)
+
+            local DescriptionLabel = nil
+            if Config.Description then
+                DescriptionLabel = SimpleUI.Utility:CreateInstance("TextLabel", {
+                    Name = SimpleUI.Utility:GenerateId(),
+                    Size = UDim2.new(1, Config.Closable ~= false and -(IsMobile and 22 or 26) or 0, 0, 0),
+                    AutomaticSize = Enum.AutomaticSize.Y,
+                    BackgroundTransparency = 1,
+                    Text = Config.Description,
+                    TextColor3 = Theme.TextSecondary,
+                    TextTransparency = 1,
+                    TextSize = IsMobile and 11 or 12,
+                    Font = Theme.FontSecondary,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextWrapped = true,
+                    RichText = true,
+                    LineHeight = 1.2,
+                    LayoutOrder = 2,
+                    ZIndex = SimpleUI.Constants.ZIndex.Notification + 3
+                }, TextContainer)
+            end
+
+            if Config.Closable ~= false then
+                local CloseBtn = SimpleUI.Utility:CreateInstance("TextButton", {
+                    Name = SimpleUI.Utility:GenerateId(),
+                    Position = UDim2.new(1, 0, 0, 0),
+                    AnchorPoint = Vector2.new(1, 0),
+                    Size = UDim2.new(0, IsMobile and 16 or 18, 0, IsMobile and 16 or 18),
+                    BackgroundTransparency = 1,
+                    Text = "×",
+                    Font = Theme.FontPrimary,
+                    TextSize = IsMobile and 18 or 20,
+                    TextColor3 = Theme.TextInactive,
+                    TextTransparency = 1,
+                    AutoButtonColor = false,
+                    ZIndex = SimpleUI.Constants.ZIndex.Notification + 5
+                }, Content)
+
+                CloseBtn.MouseEnter:Connect(function()
+                    TweenService:Create(CloseBtn, TweenInfo.new(0.15), {
+                        TextColor3 = Color3.fromRGB(255, 85, 85),
+                        Rotation = 90
+                    }):Play()
+                end)
+                CloseBtn.MouseLeave:Connect(function()
+                    TweenService:Create(CloseBtn, TweenInfo.new(0.15), {
+                        TextColor3 = Theme.TextInactive,
+                        Rotation = 0
+                    }):Play()
+                end)
+                CloseBtn.Activated:Connect(function()
+                    SimpleUI.NotificationManager:Dismiss(Notification)
+                end)
+            end
+
+            if Config.Callback then
+                local ClickArea = SimpleUI.Utility:CreateInstance("TextButton", {
+                    Name = SimpleUI.Utility:GenerateId(),
+                    Size = UDim2.new(1, 0, 1, 0),
+                    BackgroundTransparency = 1,
+                    Text = "",
+                    AutoButtonColor = false,
+                    ZIndex = SimpleUI.Constants.ZIndex.Notification
+                }, Notification)
+
+                ClickArea.Activated:Connect(function()
+                    SimpleUI.ErrorHandler:Try(function()
+                        Config.Callback(Notification)
+                    end)
+                end)
+                ClickArea.MouseEnter:Connect(function()
+                    TweenService:Create(Notification, TweenInfo.new(0.15), {
+                        BackgroundColor3 = Theme.SecondaryHover
+                    }):Play()
+                end)
+                ClickArea.MouseLeave:Connect(function()
+                    TweenService:Create(Notification, TweenInfo.new(0.15), {
+                        BackgroundColor3 = Theme.Secondary
+                    }):Play()
+                end)
+            end
+
+            task.defer(function()
+                task.wait()
+
+                local TextH = 0
+                for _, Child in ipairs(TextContainer:GetChildren()) do
+                    if Child:IsA("TextLabel") or Child:IsA("Frame") then
+                        TextH = TextH + Child.AbsoluteSize.Y
+                    end
+                end
+                local Layout = TextContainer:FindFirstChildOfClass("UIListLayout")
+                local ChildCount = 0
+                for _, Child in ipairs(TextContainer:GetChildren()) do
+                    if Child:IsA("TextLabel") or Child:IsA("Frame") then
+                        ChildCount = ChildCount + 1
+                    end
+                end
+                if Layout and ChildCount > 1 then
+                    TextH = TextH + Layout.Padding.Offset * (ChildCount - 1)
+                end
+
+                local MinH = IsMobile and 38 or 42
+                local CardH = math.max(TextH + BasePad * 2, MinH)
+                local BarH = HasDuration and 2 or 0
+
+                Notification.Size = UDim2.new(1, 0, 0, CardH + BarH)
+                Notification.Position = UDim2.new(0, 0, 0, 0)
+                Notification.BackgroundTransparency = 1
+                Shadow.ImageTransparency = 1
+
+                for _, Child in ipairs(Notification:GetDescendants()) do
+                    if Child:IsA("TextLabel") or Child:IsA("TextButton") then
+                        Child.TextTransparency = 1
+                    elseif Child:IsA("ImageLabel") and Child.Name ~= Shadow.Name then
+                        Child.ImageTransparency = 1
+                    elseif Child:IsA("Frame") and Child ~= Notification then
+                        Child.BackgroundTransparency = 1
+                    end
+                end
+
+                local SlideInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                local Tweens = {}
+
+                table.insert(Tweens, TweenService:Create(Notification, SlideInfo, {
+                    Position = UDim2.new(0, 0, 0, 0),
+                    BackgroundTransparency = 0
+                }))
+                table.insert(Tweens, TweenService:Create(Shadow, SlideInfo, {
+                    ImageTransparency = 0.75
+                }))
+                table.insert(Tweens, TweenService:Create(AccentBar, SlideInfo, {
+                    BackgroundTransparency = 0
+                }))
+                table.insert(Tweens, TweenService:Create(Tag, SlideInfo, {
+                    TextTransparency = 0,
+                    BackgroundTransparency = 0.78
+                }))
+
+                for _, Child in ipairs(Notification:GetDescendants()) do
+                    if Child:IsA("TextLabel") and Child.Name ~= Tag.Name then
+                        table.insert(Tweens, TweenService:Create(Child, SlideInfo, {
+                            TextTransparency = 0
+                        }))
+                    elseif Child:IsA("TextButton") then
+                        table.insert(Tweens, TweenService:Create(Child, SlideInfo, {
+                            TextTransparency = 0
+                        }))
+                    end
+                end
+
+                for _, Tween in ipairs(Tweens) do
+                    Tween:Play()
+                end
+
+                if HasDuration then
+                    local ProgressBar = SimpleUI.Utility:CreateInstance("Frame", {
+                        Name = SimpleUI.Utility:GenerateId(),
+                        Position = UDim2.new(0, 0, 1, -BarH),
+                        Size = UDim2.new(1, 0, 0, BarH),
+                        BackgroundColor3 = Accent,
+                        BorderSizePixel = 0,
+                        ZIndex = SimpleUI.Constants.ZIndex.Notification + 4
+                    }, Notification)
+
+                    TweenService:Create(ProgressBar, TweenInfo.new(Config.Duration, Enum.EasingStyle.Linear), {
+                        Size = UDim2.new(0, 0, 0, BarH)
+                    }):Play()
+
+                    task.delay(Config.Duration, function()
+                        if Notification and Notification.Parent then
+                            SimpleUI.NotificationManager:Dismiss(Notification)
+                        end
+                    end)
+                end
+            end)
+
+            return {
+                Container = Notification,
+                Title = TitleLabel,
+                Description = DescriptionLabel,
+                Tag = Tag,
+                Content = Content,
+                AccentBar = AccentBar
+            }
+        end
+
+        function SimpleUI.NotificationManager:Dismiss(Notification)
+            if not Notification or not Notification.Parent then
+                return false
+            end
+
+            local FadeInfo = TweenInfo.new(0.35, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+            local Shadow = Notification:FindFirstChild("Shadow")
+            local Tweens = {}
+
+            table.insert(Tweens, TweenService:Create(Notification, FadeInfo, {
+                BackgroundTransparency = 1
+            }))
+            if Shadow then
+                table.insert(Tweens, TweenService:Create(Shadow, FadeInfo, {
+                    ImageTransparency = 1
+                }))
+            end
+
+            for _, o in ipairs(Notification:GetDescendants()) do
+                if o:IsA("TextLabel") or o:IsA("TextButton") then
+                    table.insert(Tweens, TweenService:Create(o, FadeInfo, {
+                        TextTransparency = 1,
+                        BackgroundTransparency = 1
+                    }))
+                elseif o:IsA("ImageLabel") and o ~= Shadow then
+                    table.insert(Tweens, TweenService:Create(o, FadeInfo, {
+                        ImageTransparency = 1
+                    }))
+                elseif o:IsA("Frame") and o ~= Notification then
+                    table.insert(Tweens, TweenService:Create(o, FadeInfo, {
+                        BackgroundTransparency = 1
+                    }))
+                end
+            end
+
+            for _, Tween in ipairs(Tweens) do
+                Tween:Play()
+            end
+
+            task.delay(0.35, function()
+                if not Notification or not Notification.Parent then
+                    return
+                end
+                TweenService:Create(Notification, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
+                    {
+                        Size = UDim2.new(1, 0, 0, 0)
+                    }):Play()
+                task.wait(0.15)
+                if Notification and Notification.Parent then
+                    Notification:Destroy()
+                end
+            end)
+
+            return true
+        end
+
+        function SimpleUI.NotificationManager:DismissAll()
+            local Holder = self:GetHolder()
+            local ToRemove = {}
+            for _, Child in ipairs(Holder:GetChildren()) do
+                if Child:IsA("Frame") then
+                    table.insert(ToRemove, Child)
+                end
+            end
+            for _, Child in ipairs(ToRemove) do
+                self:Dismiss(Child)
+            end
+        end
+    end
+
+    SimpleUI.MarkdownParser = {}
+    do
+        function SimpleUI.MarkdownParser:ConvertToRichText(Markdown)
+            local Text = Markdown
+            Text = Text:gsub("### (.-)\n", '<font size="18"><b>%1</b></font>\n')
+            Text = Text:gsub("## (.-)\n", '<font size="20"><b>%1</b></font>\n')
+            Text = Text:gsub("# (.-)\n", '<font size="22"><b>%1</b></font>\n')
+            Text = Text:gsub("%*%*%*(.-)%*%*%*", "<b><i>%1</i></b>")
+            Text = Text:gsub("%*%*(.-)%*%*", "<b>%1</b>")
+            Text = Text:gsub("%*(.-)%*", "<i>%1</i>")
+            Text = Text:gsub("__(.-)__", "<b>%1</b>")
+            Text = Text:gsub("_(.-)_", "<i>%1</i>")
+            Text = Text:gsub("~~(.-)~~", "<s>%1</s>")
+            Text = Text:gsub("`([^`]+)`",
+                '<font face="RobotoMono"><stroke color="rgb(50,50,60)" joins="miter" thickness="3" transparency="0">%1</stroke></font>')
+            Text = Text:gsub("```(.-)```", function(Code)
+                return
+                    '<font face="RobotoMono" size="13"><stroke color="rgb(50,50,60)" joins="miter" thickness="3" transparency="0">' ..
+                        Code .. '</stroke></font>'
+            end)
+            Text = Text:gsub("%[(.-)%]%((.-)%)", '<font color="rgb(100,150,255)"><u>%1</u></font>')
+            Text = Text:gsub("^%- (.-)\n", "• %1\n")
+            Text = Text:gsub("\n%- (.-)\n", "\n• %1\n")
+            Text = Text:gsub("\n%- (.-)", "\n• %1")
+            Text = Text:gsub("^%* (.-)\n", "• %1\n")
+            Text = Text:gsub("\n%* (.-)\n", "\n• %1\n")
+            Text = Text:gsub("\n%* (.-)", "\n• %1")
+            Text = Text:gsub("^%d+%. (.-)\n", "%1\n")
+            Text = Text:gsub("\n%d+%. (.-)\n", "\n%1\n")
+            Text = Text:gsub("%-%-%-+", "────────────────────────")
+            Text = Text:gsub("%*%*%*+", "────────────────────────")
+            return Text
+        end
+    end
+end
+
+function SimpleUI:CreateWindow(options)
+    options = options or {}
+
+    local theme = type(options.Theme) == "string" and (self.Themes[options.Theme] or self.Themes.DefaultTheme) or
+                      type(options.Theme) == "table" and options.Theme or self.Themes.DefaultTheme
+
+    local scale = math.clamp(options.DefaultScale or self.Constants.Window.DefaultScale, self.Constants.Window.MinScale,
+        self.Constants.Window.MaxScale)
+
+    local screenGui = self.Utility:CreateInstance("ScreenGui", {
+        Name = options.Name or self.Utility:GenerateId(),
+        ResetOnSpawn = false,
+        DisplayOrder = options.DisplayOrder or 1,
+        IgnoreGuiInset = options.IgnoreGuiInset or false,
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    })
+    self.Utility:ParentUI(screenGui)
+
+    local mainFrame, uiScale, mainFrameBindings = self.WindowBuilder:CreateMainFrame(screenGui, options, theme)
+    local topBarHeight = options.TopBarHeight or self.Constants.Window.TopBarHeight
+    local footerHeight = options.Footer and (options.FooterHeight or 10) or 0
+
+    local topBar, topBarSeparator, topBarSeparatorBindings = self.WindowBuilder:CreateTopBar(mainFrame, options, theme)
+
+    local tabInfoContainer, controlsContainer, tabNameLabel, tabDescLabel, brandIconElement, brandInitialElement,
+        brandTitleLabel = self.WindowBuilder:CreateTitleSection(topBar, options, theme)
+
+    local controlButtons = self.WindowBuilder:CreateWindowControls(controlsContainer, options, theme)
+
+    local footer, footerBindings, footerContent, separatorBindings, resizeContainer =
+        self.WindowBuilder:CreateFooter(mainFrame, options, theme)
+    local ResizeMode = options.ResizeMode or self.Constants.Window.ResizeModes.BottomRight
+
+    local mainContainer = self.WindowBuilder:CreateMainContainer(mainFrame, options, theme, topBarHeight, footerHeight)
+
+    local tabsContainer, contentsContainer, tabsSeparator, tabsSeparatorBindings =
+        self.WindowBuilder:CreateContentAreas(mainContainer, mainFrame, topBar, options)
+
+    local window = {
+        _connections = SimpleUI.ConnectionRegistry:New(),
+        Theme = theme,
+        TabMode = options.TabMode or self.Constants.Window.TabModes.Fixed,
+        TabsExpanded = true,
+        ActiveTab = nil,
+        ActivePage = nil,
+        TabCallbacks = {},
+        Scale = uiScale,
+        Elements = {
+            ScreenGui = screenGui,
+            MainFrame = mainFrame,
+            TopBar = topBar,
+            TabInfoContainer = tabInfoContainer,
+            TitleLabel = tabNameLabel,
+            SubtitleLabel = tabDescLabel,
+            BrandIcon = brandIconElement,
+            BrandInitial = brandInitialElement,
+            BrandTitle = brandTitleLabel,
+            ControlsContainer = controlsContainer,
+            ControlButtons = controlButtons,
+            Footer = footer,
+            FooterContent = footerContent,
+            FooterResizeArea = resizeContainer,
+            MainContainer = mainContainer,
+            TabsContainer = tabsContainer,
+            TabsSeparator = tabsSeparator,
+            ContentsContainer = contentsContainer,
+            Tabs = {},
+            Pages = {}
+        },
+
+        GetScale = function()
+            return uiScale.Scale
+        end,
+
+        SetScale = function(self, value, animate)
+            value = math.clamp(tonumber(value) or 1, SimpleUI.Constants.Window.MinScale,
+                SimpleUI.Constants.Window.MaxScale)
+
+            if animate then
+                TweenService:Create(uiScale, TweenInfo.new(SimpleUI.Constants.Animation.Normal, Enum.EasingStyle.Sine,
+                    Enum.EasingDirection.Out), {
+                    Scale = value
+                }):Play()
+            else
+                uiScale.Scale = value
+            end
+        end,
+
+        SetTheme = function(self, themeName, animate)
+            if type(themeName) ~= "string" then
+                return
+            end
+            SimpleUI.ThemeManager:SetTheme(self, themeName, animate ~= false)
+        end,
+
+        GetTheme = function(self)
+            return SimpleUI.ThemeManager:GetThemeName(self)
+        end,
+
+        SetTabMode = function(self, mode, animate, threshold)
+            threshold = threshold or SimpleUI.Constants.Window.TabDynamicThreshold
+            local modes = SimpleUI.Constants.Window.TabModes
+
+            if not modes[mode] then
+                SimpleUI.ErrorHandler:Guard(false, "SetTabMode",
+                    string.format("Invalid tab mode '%s', using Dynamic", tostring(mode)),
+                    SimpleUI.ErrorHandler.Levels.WARN)
+                mode = modes.Dynamic
+            end
+
+            self.TabMode = mode
+            local duration = SimpleUI.Constants.Animation.Smooth
+            local const = SimpleUI.Constants.Window
+
+            local function updateTopBarLayout(expanded, tweenDuration)
+                if not tabsSeparator then
+                    return
+                end
+
+                local hasBrand = options.Brand ~= nil
+                local xScale, xOffset
+
+                if expanded then
+                    xScale = const.TabsWidthOpen
+                    xOffset = const.TabSeparatorGap
+                    if tabNameLabel then
+                        TweenService:Create(tabNameLabel, TweenInfo.new(tweenDuration, Enum.EasingStyle.Quad), {
+                            TextTransparency = 1
+                        }):Play()
+                    end
+                    if tabDescLabel then
+                        TweenService:Create(tabDescLabel, TweenInfo.new(tweenDuration, Enum.EasingStyle.Quad), {
+                            TextTransparency = 1
+                        }):Play()
+                    end
+                    TweenService:Create(tabsSeparator,
+                        TweenInfo.new(tweenDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                            Size = UDim2.new(0, 1, 1, -topBarHeight),
+                            Position = UDim2.new(xScale, xOffset, 0, topBarHeight)
+                        }):Play()
+
+                    if brandTitleLabel then
+                        TweenService:Create(brandTitleLabel, TweenInfo.new(tweenDuration * 0.8, Enum.EasingStyle.Quad,
+                            Enum.EasingDirection.Out), {
+                            TextTransparency = 0
+                        }):Play()
+                    end
+
+                    if tabInfoContainer then
+                        TweenService:Create(tabInfoContainer, TweenInfo.new(tweenDuration, Enum.EasingStyle.Quad,
+                            Enum.EasingDirection.Out), {
+                            Position = UDim2.new(xScale, xOffset + 1, 0.5, 0)
+                        }):Play()
+                    end
+                else
+                    xOffset = const.TabsWidthClosed + const.ClosedTabHorizontalPadding + const.TabSeparatorGap
+
+                    if tabNameLabel then
+                        TweenService:Create(tabNameLabel, TweenInfo.new(tweenDuration, Enum.EasingStyle.Quad), {
+                            TextTransparency = 0
+                        }):Play()
+                    end
+                    if tabDescLabel then
+                        TweenService:Create(tabDescLabel, TweenInfo.new(tweenDuration, Enum.EasingStyle.Quad), {
+                            TextTransparency = 0
+                        }):Play()
+                    end
+
+                    TweenService:Create(tabsSeparator,
+                        TweenInfo.new(tweenDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                            Size = UDim2.new(0, 1, 1, hasBrand and 0 or -topBarHeight),
+                            Position = UDim2.new(0, xOffset, 0, hasBrand and 0 or topBarHeight)
+                        }):Play()
+
+                    if brandTitleLabel then
+                        TweenService:Create(brandTitleLabel, TweenInfo.new(tweenDuration * 0.5, Enum.EasingStyle.Quad,
+                            Enum.EasingDirection.In), {
+                            TextTransparency = 1
+                        }):Play()
+                    end
+
+                    if tabInfoContainer then
+                        TweenService:Create(tabInfoContainer, TweenInfo.new(tweenDuration, Enum.EasingStyle.Quad,
+                            Enum.EasingDirection.Out), {
+                            Position = UDim2.new(0, xOffset + 1, 0.5, 0)
+                        }):Play()
+                    end
+                end
+            end
+
+            local function setExpanded(expanded, tweenDuration)
+                self.TabsExpanded = expanded
+                tweenDuration = tweenDuration and duration or 0
+
+                updateTopBarLayout(expanded, tweenDuration)
+
+                local hPad = const.HorizontalPadding
+                local tabsSize, tabsPos, contentsPos, contentsSize
+
+                if expanded then
+                    tabsSize = UDim2.new(const.TabsWidthOpen, -(hPad * 0.5), 1, 0)
+                    tabsPos = UDim2.new(0, hPad * 0.5, 0, 0)
+                    contentsPos = UDim2.new(const.TabsWidthOpen, hPad, 0, 0)
+                    contentsSize = UDim2.new(const.ContentWidthOpen, -(hPad * 2), 1, 0)
+                else
+                    local contentLeft = const.ContentLeftOffsetClosed
+                    tabsSize = UDim2.new(0, const.TabsWidthClosed, 1, 0)
+                    tabsPos = UDim2.new(0, const.ClosedTabHorizontalPadding, 0, 0)
+                    contentsPos = UDim2.new(0, contentLeft, 0, 0)
+                    contentsSize = UDim2.new(1, -(contentLeft + hPad), 1, 0)
+                end
+
+                TweenService:Create(tabsContainer,
+                    TweenInfo.new(tweenDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        Size = tabsSize,
+                        Position = tabsPos
+                    }):Play()
+
+                TweenService:Create(contentsContainer,
+                    TweenInfo.new(tweenDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        Position = contentsPos,
+                        Size = contentsSize
+                    }):Play()
+
+                for _, tabData in pairs(self.Elements.Tabs) do
+                    if type(tabData) == "table" and tabData.Container then
+
+                        local isActive = tabData.Container == self.ActiveTab
+
+                        if not isActive then
+                            local currentTheme = SimpleUI.ThemeManager:GetCurrentTheme(self)
+                            local targetColor = expanded and currentTheme.Secondary or currentTheme.Secondary
+                            local targetTransparency = expanded and (currentTheme.TransparencySecondary or 0.8) or 1
+
+                            TweenService:Create(tabData.Container, TweenInfo.new(tweenDuration, Enum.EasingStyle.Quad),
+                                {
+                                    BackgroundColor3 = targetColor,
+                                    BackgroundTransparency = targetTransparency
+                                }):Play()
+                        end
+
+                        TweenService:Create(tabData.Container, TweenInfo.new(tweenDuration, Enum.EasingStyle.Quad), {
+                            Size = UDim2.new(1, -8, 0, expanded and 32 or 44)
+                        }):Play()
+
+                        if tabData.Icon then
+                            local iconSize = expanded and const.TabIconSizeExpanded or 24
+                            TweenService:Create(tabData.Icon, TweenInfo.new(tweenDuration, Enum.EasingStyle.Quad), {
+                                Size = UDim2.new(0, iconSize, 0, iconSize)
+                            }):Play()
+                        end
+
+                        if tabData.TextLabel then
+                            if expanded then
+                                tabData.TextLabel.Visible = true
+                                TweenService:Create(tabData.TextLabel,
+                                    TweenInfo.new(tweenDuration * 0.5, Enum.EasingStyle.Quad), {
+                                        TextTransparency = 0
+                                    }):Play()
+                            else
+                                TweenService:Create(tabData.TextLabel,
+                                    TweenInfo.new(tweenDuration * 0.5, Enum.EasingStyle.Quad), {
+                                        TextTransparency = 1
+                                    }):Play()
+                                task.delay(tweenDuration * 0.5, function()
+                                    if not self.TabsExpanded then
+                                        tabData.TextLabel.Visible = false
+                                    end
+                                end)
+                            end
+                        end
+
+                        if tabData.ContentContainer then
+                            TweenService:Create(tabData.ContentContainer,
+                                TweenInfo.new(tweenDuration, Enum.EasingStyle.Quad), expanded and {
+                                    Position = UDim2.new(0, 0, 0, 0),
+                                    AnchorPoint = Vector2.new(0, 0)
+                                } or {
+                                    Position = UDim2.new(0.5, 0, 0.5, 0),
+                                    AnchorPoint = Vector2.new(0.5, 0.5)
+                                }):Play()
+                        end
+
+                        if tabData.AccentLine then
+                            local isActive = tabData.Container == self.ActiveTab
+                            if isActive then
+                                TweenService:Create(tabData.AccentLine,
+                                    TweenInfo.new(tweenDuration, Enum.EasingStyle.Quad), {
+                                        BackgroundTransparency = expanded and 1 or 0
+                                    }):Play()
+                            end
+                        end
+                    end
+                end
+
+                task.delay(tweenDuration, function()
+                    for _, tabData in pairs(self.Elements.Tabs) do
+                        if type(tabData) == "table" and tabData.RefreshVisuals then
+                            tabData.RefreshVisuals()
+                        end
+                    end
+                end)
+            end
+
+            if mode == modes.Fixed then
+                setExpanded(true, animate)
+            elseif mode == modes.Closed then
+                setExpanded(false, animate)
+            elseif mode == modes.Dynamic then
+                setExpanded(false, animate)
+                local mouseInside = false
+                local expandConnection = nil
+
+                local function scheduleExpand()
+                    if expandConnection then
+                        expandConnection:Disconnect()
+                    end
+                    expandConnection = task.spawn(function()
+                        task.wait(threshold)
+                        if mouseInside and self.TabMode == modes.Dynamic then
+                            setExpanded(true, true)
+                        end
+                        expandConnection = nil
+                    end)
+                end
+
+                tabsContainer.MouseEnter:Connect(function()
+                    if self.TabMode ~= modes.Dynamic then
+                        return
+                    end
+                    mouseInside = true
+                    scheduleExpand()
+                end)
+
+                tabsContainer.MouseLeave:Connect(function()
+                    mouseInside = false
+                    if expandConnection then
+                        task.cancel(expandConnection)
+                        expandConnection = nil
+                    end
+                    if self.TabMode == modes.Dynamic then
+                        setExpanded(false, true)
+                    end
+                end)
+            end
+        end,
+
+        AddFooterText = function(self, config)
+            if not footer or not footerContent then
+                return nil
+            end
+            config = config or {}
+
+            local currentTheme = SimpleUI.ThemeManager:GetCurrentTheme(self)
+            local properties, bindings = SimpleUI.Utility:ApplyTheme({
+                Name = config.Name or "FooterText",
+                LayoutOrder = config.Order or 1,
+                Size = UDim2.new(0, 0, 1, 0),
+                AutomaticSize = Enum.AutomaticSize.X,
+                BackgroundTransparency = 1,
+                Text = config.Text or "",
+                TextSize = config.TextSize or 14,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                ZIndex = footer.ZIndex + 2
+            }, {
+                Font = "FontSecondary",
+                TextColor3 = config.ColorTier or "TextSecondary"
+            }, currentTheme)
+
+            local label = SimpleUI.Utility:CreateInstance("TextLabel", properties, footerContent)
+            if bindings then
+                SimpleUI.ThemeManager:RegisterElement(self, label, bindings)
+            end
+            return label
+        end,
+
+        SetFooterText = function(self, element, newText)
+            if element and element:IsA("TextLabel") then
+                element.Text = tostring(newText)
+            end
+        end,
+
+        AddFooterButton = function(self, config)
+            if not footer or not footerContent then
+                return nil
+            end
+            config = config or {}
+
+            local currentTheme = SimpleUI.ThemeManager:GetCurrentTheme(self)
+            local buttonText = config.Text or "Button"
+            local callback = config.Callback or function()
+            end
+
+            local properties, bindings = SimpleUI.Utility:ApplyTheme({
+                Name = config.Name or buttonText,
+                LayoutOrder = config.Order or 1,
+                Size = UDim2.new(0, config.Width or 80, 1, -8),
+                Text = buttonText,
+                TextSize = config.TextSize or 14,
+                BorderSizePixel = 0,
+                AutoButtonColor = false,
+                ZIndex = footer.ZIndex + 2
+            }, {
+                Font = "FontSecondary",
+                TextColor3 = "TextPrimary",
+                BackgroundColor3 = "Tertiary"
+            }, currentTheme)
+
+            local button = SimpleUI.Utility:CreateInstance("TextButton", properties, footerContent)
+            SimpleUI.Utility:CreateInstance("UICorner", {
+                CornerRadius = UDim.new(0, SimpleUI.Constants.Corner.Medium)
+            }, button)
+
+            if not SimpleUI.Utility:IsMobile() then
+                button.MouseEnter:Connect(function()
+                    TweenService:Create(button, TweenInfo.new(0.15), {
+                        BackgroundColor3 = currentTheme.TertiaryHover
+                    }):Play()
+                end)
+                button.MouseLeave:Connect(function()
+                    TweenService:Create(button, TweenInfo.new(0.15), {
+                        BackgroundColor3 = currentTheme.Tertiary
+                    }):Play()
+                end)
+            end
+
+            button.Activated:Connect(function()
+                TweenService:Create(button, TweenInfo.new(0.1), {
+                    BackgroundColor3 = currentTheme.TertiaryPressed
+                }):Play()
+                task.wait(0.1)
+                TweenService:Create(button, TweenInfo.new(0.1), {
+                    BackgroundColor3 = currentTheme.Tertiary
+                }):Play()
+                SimpleUI.ErrorHandler:Try(function()
+                    SimpleUI.Security:SafeCallback(callback())
+                end)
+            end)
+
+            if bindings then
+                SimpleUI.ThemeManager:RegisterElement(self, button, bindings)
+            end
+            return button
+        end,
+
+        ClearFooter = function(self)
+            if footerContent then
+                for _, child in ipairs(footerContent:GetChildren()) do
+                    if not child:IsA("UIListLayout") then
+                        child:Destroy()
+                    end
+                end
+            end
+        end,
+
+        SetFooterAlignment = function(self, alignment)
+            if footerContent then
+                local layout = footerContent:FindFirstChildOfClass("UIListLayout")
+                if layout then
+                    layout.HorizontalAlignment = alignment
+                end
+            end
+        end,
+
+        Hide = function(self)
+            mainFrame.Visible = false
+        end,
+
+        Show = function(self)
+            mainFrame.Visible = true
+        end,
+
+        Toggle = function(self)
+            mainFrame.Visible = not mainFrame.Visible
+        end,
+
+        Destroy = function(self)
+            self._connections:Cleanup()
+            SimpleUI.Windows[screenGui] = nil
+            screenGui:Destroy()
+        end,
+
+        IsVisible = function(self)
+            return mainFrame.Visible
+        end,
+
+        SetOpacity = function(self, value, animate)
+            value = math.clamp(tonumber(value) or 1, 0, 1)
+            local tweenDuration = animate and SimpleUI.Constants.Animation.Normal or 0
+
+            for _, element in ipairs({topBar, mainContainer, footer}) do
+                if element then
+                    local originalTransparency = element:GetAttribute("OriginalTransparency")
+                    if not originalTransparency then
+                        originalTransparency = element.BackgroundTransparency
+                        element:SetAttribute("OriginalTransparency", originalTransparency)
+                    end
+
+                    local newTransparency = 1 - ((1 - originalTransparency) * value)
+
+                    if animate then
+                        TweenService:Create(element, TweenInfo.new(tweenDuration, Enum.EasingStyle.Quad), {
+                            BackgroundTransparency = newTransparency
+                        }):Play()
+                    else
+                        element.BackgroundTransparency = newTransparency
+                    end
+                end
+            end
+        end,
+
+        EnableBlur = function(self, intensity)
+            pcall(function()
+                intensity = math.clamp(tonumber(intensity) or 24, 0, 56)
+                local existing = Lighting:FindFirstChild("SimpleUIBlur")
+                if existing then
+                    existing.Size = intensity
+                else
+                    local blur = Instance.new("BlurEffect")
+                    blur.Name = "SimpleUIBlur"
+                    blur.Size = intensity
+                    blur.Parent = Lighting
+                end
+            end)
+        end,
+
+        DisableBlur = function(self)
+            pcall(function()
+                local existing = Lighting:FindFirstChild("SimpleUIBlur")
+                if existing then
+                    existing:Destroy()
+                end
+            end)
+        end
+    }
+
+    self.Windows[screenGui] = window
+    self.ThemeManager:Initialize(window)
+
+    if mainFrameBindings then
+        self.ThemeManager:RegisterElement(window, mainFrame, mainFrameBindings)
+    end
+    if footer and footerBindings then
+        self.ThemeManager:RegisterElement(window, footer, footerBindings)
+    end
+    if separatorBindings and separatorBindings.Element then
+        self.ThemeManager:RegisterElement(window, separatorBindings.Element, separatorBindings.Bindings)
+    end
+    if topBarSeparatorBindings then
+        self.ThemeManager:RegisterElement(window, topBarSeparator, topBarSeparatorBindings)
+    end
+    if tabsSeparatorBindings then
+        self.ThemeManager:RegisterElement(window, tabsSeparator, tabsSeparatorBindings)
+    end
+
+    if tabNameLabel then
+        self.ThemeManager:RegisterElement(window, tabNameLabel, {
+            TextColor3 = "TextPrimary",
+            Font = "FontPrimary"
+        })
+    end
+
+    if tabDescLabel then
+        self.ThemeManager:RegisterElement(window, tabDescLabel, {
+            TextColor3 = "TextSecondary",
+            Font = "FontSecondary"
+        })
+    end
+
+    if brandTitleLabel then
+        self.ThemeManager:RegisterElement(window, brandTitleLabel, {
+            TextColor3 = "TextPrimary",
+            Font = "FontPrimary"
+        })
+    end
+
+    if brandInitialElement then
+        self.ThemeManager:RegisterElement(window, brandInitialElement, {
+            TextColor3 = "TextPrimary"
+        })
+    end
+
+    self.WindowControlBuilder:RegisterIconBindings(window, controlButtons, options)
+
+    self.WindowBuilder:SetupDragging(topBar, mainFrame)
+
+    local resizeHandle, resizeIcon, resizeBindings = self.WindowBuilder:SetupResizing(mainFrame, uiScale, options,
+        window.Elements.FooterResizeArea, ResizeMode, theme)
+
+    self.WindowBuilder:SetupScrollUpdates(window)
+
+    if resizeBindings then
+        self.ThemeManager:RegisterMultiple(window, resizeBindings)
+    end
+
+    for _, methodName in ipairs({"Destroy", "SetTheme", "SetScale", "Hide", "Show", "Toggle", "IsVisible", "SetTitle",
+                                 "SetSubtitle", "AddFooterButton", "ClearFooter", "SetFooterAlignment", "SetOpacity",
+                                 "EnableBlur", "DisableBlur", "SetTabMode", "PopulateFooter"}) do
+        if window[methodName] then
+            window[methodName] = self.Security:WrapFunction(window[methodName])
+        end
+    end
+
+    if footer and options.FooterItems then
+        self.WindowBuilder:PopulateFooter(window, options, theme)
+    end
+
+    if options.StartHidden then
+        mainFrame.Visible = false
+    end
+
+    if options.TabMode then
+        window:SetTabMode(options.TabMode, true, options.TabDynamicThreshold)
+    end
+
+    if options.InitialOpacity then
+        window:SetOpacity(options.InitialOpacity, false)
+    end
+
+    return window
+end
+
+function SimpleUI:CreateTab(Window, Name, Options)
+    if not Window or not Window.Elements or not Window.Elements.TabsContainer then
+        return
+    end
+    Options = Options or {}
+    local Theme = self.ThemeManager:GetCurrentTheme(Window)
+    local IsMobile = self.Utility:IsMobile()
+
+    if not Window.TabActivationLock then
+        Window.TabActivationLock = false
+    end
+
+    local Tab = self.Utility:CreateInstance("TextButton", {
+        Name = Name,
+        Size = UDim2.new(1, -8, 0, Window.TabsExpanded and 32 or 44),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Text = "",
+        AutoButtonColor = false,
+        ZIndex = self.Constants.ZIndex.Content,
+        LayoutOrder = #Window.Elements.Tabs
+    }, Window.Elements.TabsContainer)
+    self.Utility:CreateInstance("UICorner", {
+        CornerRadius = UDim.new(0, self.Constants.Corner.Medium)
+    }, Tab)
+
+    local AccentLine = self.Utility:CreateInstance("Frame", {
+        Name = "AccentLine",
+        Size = UDim2.new(0, 2, 0, 24),
+        Position = UDim2.new(0, -4, 0.5, 0),
+        AnchorPoint = Vector2.new(0, 0.5),
+        BackgroundColor3 = Theme.TabAccent or Theme.Accent,
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ZIndex = self.Constants.ZIndex.Control + 2
+    }, Tab)
+    self.Utility:CreateInstance("UICorner", {
+        CornerRadius = UDim.new(1, 0)
+    }, AccentLine)
+
+    local ContentContainer = self.Utility:CreateInstance("Frame", {
+        Name = "ContentContainer",
+        Size = UDim2.new(1, 0, 1, 0),
