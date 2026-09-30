@@ -1,0 +1,1000 @@
+            return
+        end
+        local CurrentTheme = Window and self.ThemeManager:GetCurrentTheme(Window) or Theme
+        TweenService:Create(InputBox, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
+            BackgroundColor3 = state and CurrentTheme.TertiaryHover or CurrentTheme.Tertiary
+        }):Play()
+    end
+
+    InputBox:GetPropertyChangedSignal("Text"):Connect(function()
+        local currentText = InputBox.Text
+        if not validateInput(currentText) then
+            InputBox.Text = LastValidValue
+            showError("Invalid " .. InputType)
+        else
+            LastValidValue = currentText
+            if IsFocused then
+                clearError()
+            end
+        end
+    end)
+
+    InputBox.Focused:Connect(function()
+        IsFocused = true
+        clearError()
+        local CurrentTheme = Window and self.ThemeManager:GetCurrentTheme(Window) or Theme
+        TweenService:Create(Underline, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+            BackgroundColor3 = CurrentTheme.Accent,
+            Size = UDim2.new(1, 0, 0, 3)
+        }):Play()
+        TweenService:Create(InputBox, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+            BackgroundColor3 = CurrentTheme.TertiaryHover
+        }):Play()
+    end)
+
+    InputBox.FocusLost:Connect(function()
+        IsFocused = false
+        local CurrentTheme = Window and self.ThemeManager:GetCurrentTheme(Window) or Theme
+        TweenService:Create(Underline, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+            BackgroundColor3 = CurrentTheme.TertiaryPressed,
+            Size = UDim2.new(1, 0, 0, 2)
+        }):Play()
+        updateHover(false)
+        if validateInput(InputBox.Text) then
+            SimpleUI.SaveManager:WriteBinding(SaveBinding, InputBox.Text)
+            if Callback then
+                EH:Try(function()
+                    Callback(InputBox.Text)
+                end)
+            end
+        else
+            InputBox.Text = LastValidValue
+        end
+    end)
+
+    if not IsMobile then
+        InputBox.MouseEnter:Connect(function()
+            updateHover(true)
+        end)
+        InputBox.MouseLeave:Connect(function()
+            updateHover(false)
+        end)
+    end
+
+    if SaveBinding.HasValue and SaveBinding.ApplyCallback and Callback then
+        EH:Try(function()
+            Callback(InputBox.Text)
+        end)
+    end
+
+    return {
+        GetValue = function(self)
+            return InputBox.Text
+        end,
+        SetValue = function(self, Value)
+            if EH:ValidateType(Value, "string", "Value", "TextInput:SetValue") and validateInput(Value) then
+                InputBox.Text = Value
+                LastValidValue = Value
+                clearError()
+                SimpleUI.SaveManager:WriteBinding(SaveBinding, Value)
+            end
+        end,
+        SetPlaceholder = function(self, Placeholder)
+            if EH:ValidateType(Placeholder, "string", "Placeholder", "TextInput:SetPlaceholder") then
+                InputBox.PlaceholderText = Placeholder
+            end
+        end,
+        Clear = function(self)
+            InputBox.Text = ""
+            LastValidValue = ""
+            clearError()
+            SimpleUI.SaveManager:WriteBinding(SaveBinding, "")
+        end,
+        GetInputType = function(self)
+            return InputType
+        end,
+        SetInputType = function(self, NewType)
+            if ValidTypes[NewType] then
+                InputType = NewType
+                clearError()
+            end
+        end,
+        SetDescription = function(self, NewDescription)
+            local HadDescription = Description ~= nil and Description.Visible
+            local HasNewDescription = NewDescription and NewDescription ~= ""
+            if Description and NewDescription then
+                Description.Text = NewDescription
+                Description.Visible = true
+            elseif Description and not NewDescription then
+                Description.Visible = false
+            elseif not Description and NewDescription then
+                Description = SimpleUI.ComponentBuilder:CreateDescription(Zones.TextZone, NewDescription, Theme, 2)
+                if Window then
+                    SimpleUI.ThemeManager:RegisterElement(Window, Description, {
+                        TextColor3 = "TextSecondary",
+                        Font = "FontSecondary"
+                    })
+                end
+            end
+            if HadDescription ~= HasNewDescription then
+                SimpleUI.ComponentBuilder:UpdateDescriptionPadding(Zones, HasNewDescription)
+            end
+        end,
+        GetElements = function(self)
+            return {
+                Container = Zones.Container,
+                Label = Label,
+                Description = Description,
+                InputBox = InputBox,
+                Underline = Underline,
+                ErrorLabel = ErrorLabel
+            }
+        end
+    }
+end
+
+function SimpleUI:CreateKeybind(Page, Text, DefaultKey, Callback, Options)
+    local EH = self.ErrorHandler
+    if not EH:ValidateInstance(Page, "GuiObject", "CreateKeybind") then
+        return nil
+    end
+    if not EH:ValidateType(Text, "string", "Text", "CreateKeybind") then
+        Text = "Keybind"
+    end
+    if DefaultKey and typeof(DefaultKey) ~= "EnumItem" then
+        EH:Guard(false, "CreateKeybind", "DefaultKey must be a KeyCode Enum", EH.Levels.WARN)
+        DefaultKey = nil
+    elseif DefaultKey and DefaultKey.EnumType ~= Enum.KeyCode then
+        EH:Guard(false, "CreateKeybind", "DefaultKey must be a KeyCode (not " .. tostring(DefaultKey.EnumType) .. ")",
+            EH.Levels.WARN)
+        DefaultKey = nil
+    end
+    if Callback then
+        Callback = (EH:ValidateType(Callback, "function", "Callback", "CreateKeybind") == false) and nil or Callback
+    end
+    Options = Options or {}
+    local SaveBinding = self.SaveManager:GetBinding(Options, "Keybind", Text)
+    if SaveBinding.Enabled and type(SaveBinding.Value) == "string" then
+        local SavedKey = Enum.KeyCode[SaveBinding.Value]
+        if SavedKey then
+            DefaultKey = SavedKey
+        end
+    end
+    local Theme = self.ThemeManager:GetCurrentTheme(self.Utility:GetWindowFromElement(Page))
+    local IsMobile = self.Utility:IsMobile()
+    local Window = self.Utility:GetWindowFromElement(Page)
+    local HasDescription = Options.Description and Options.Description ~= ""
+
+    local Zones = self.ComponentBuilder:CreateContainer({
+        Parent = Page,
+        Layout = "TextLeft",
+        TextWidth = 0.65,
+        MinHeight = 35,
+        Padding = HasDescription and {
+            Top = self.Constants.Padding.Large,
+            Bottom = self.Constants.Padding.Large,
+            Left = self.Constants.Padding.Large,
+            Right = self.Constants.Padding.Small
+        } or {
+            Top = 2,
+            Bottom = 2,
+            Left = self.Constants.Padding.Large,
+            Right = self.Constants.Padding.Small
+        },
+        Spacing = HasDescription and self.Constants.Spacing.Tight or 0,
+        HasDescription = HasDescription,
+        CornerRadius = self.Constants.Corner.Medium,
+        ColorTier = "Secondary"
+    }, Theme)
+
+    local Label = self.ComponentBuilder:CreateLabel(Zones.TextZone, Text, Theme, {
+        ColorTier = "TextPrimary",
+        Size = 14,
+        Order = 1
+    })
+
+    local Description = HasDescription and
+                            self.ComponentBuilder:CreateDescription(Zones.TextZone, Options.Description, Theme, 2) or
+                            nil
+
+    local DisplayContainer = self.Utility:CreateInstance("Frame", {
+        Size = UDim2.new(0.35, -self.Constants.Padding.Large, 1, 0),
+        Position = UDim2.new(0.65, 0, 0, 0),
+        BackgroundTransparency = 1,
+        ZIndex = self.Constants.ZIndex.Overlay
+    }, Zones.Container)
+
+    local Display = self.Utility:CreateInstance("TextButton", {
+        Size = UDim2.new(1, -10, 0, 32),
+        Position = UDim2.new(1, -10, 0.5, 0),
+        AnchorPoint = Vector2.new(1, 0.5),
+        BackgroundColor3 = Theme.Tertiary,
+        BorderSizePixel = 0,
+        Text = "",
+        AutoButtonColor = false,
+        ZIndex = self.Constants.ZIndex.Overlay
+    }, DisplayContainer)
+
+    self.Utility:CreateInstance("UICorner", {
+        CornerRadius = UDim.new(0, self.Constants.Corner.Medium)
+    }, Display)
+
+    self.Utility:CreateInstance("UIPadding", {
+        PaddingLeft = UDim.new(0, self.Constants.Padding.Medium),
+        PaddingRight = UDim.new(0, self.Constants.Padding.Medium)
+    }, Display)
+
+    local DisplayLabel = self.Utility:CreateInstance("TextLabel", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = "",
+        TextColor3 = Theme.TextPrimary,
+        TextSize = 13,
+        Font = Theme.FontSecondary,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        ZIndex = self.Constants.ZIndex.Modal
+    }, Display)
+
+    local ThemeBindings = {
+        [Zones.Container] = {
+            BackgroundColor3 = "Secondary",
+            BackgroundTransparency = "TransparencySecondary"
+        },
+        [Label] = {
+            TextColor3 = "TextPrimary",
+            Font = "FontSecondary"
+        },
+        [DisplayLabel] = {
+            TextColor3 = "TextPrimary",
+            Font = "FontSecondary"
+        }
+    }
+    if Description then
+        ThemeBindings[Description] = {
+            TextColor3 = "TextSecondary",
+            Font = "FontSecondary"
+        }
+    end
+    if Window then
+        self.ThemeManager:RegisterMultiple(Window, ThemeBindings)
+    end
+
+    local CurrentKey = DefaultKey
+    local IsListening = false
+    local BindConnection
+    local InputConnection
+
+    local function UpdateDisplay()
+        local CurrentTheme = Window and self.ThemeManager:GetCurrentTheme(Window) or Theme
+        if IsListening then
+            DisplayLabel.Text = "Press a key..."
+            TweenService:Create(Display, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                BackgroundColor3 = CurrentTheme.Accent
+            }):Play()
+            TweenService:Create(DisplayLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                TextColor3 = CurrentTheme.TextActive
+            }):Play()
+        else
+            DisplayLabel.Text = CurrentKey and CurrentKey.Name or "None"
+            TweenService:Create(Display, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                BackgroundColor3 = CurrentTheme.Tertiary
+            }):Play()
+            TweenService:Create(DisplayLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                TextColor3 = CurrentTheme.TextPrimary
+            }):Play()
+        end
+    end
+
+    local function SetupBind()
+        if BindConnection then
+            BindConnection:Disconnect()
+        end
+        if CurrentKey and Callback then
+            BindConnection = UserInputService.InputBegan:Connect(
+                function(Input, GameProcessed)
+                    if not GameProcessed and Input.KeyCode == CurrentKey then
+                        EH:Try(function()
+                            Callback(CurrentKey)
+                        end)
+                    end
+                end)
+        end
+    end
+
+    Display.Activated:Connect(function()
+        if IsListening then
+            return
+        end
+        IsListening = true
+        UpdateDisplay()
+        InputConnection = UserInputService.InputBegan:Connect(
+            function(Input, GameProcessed)
+                if Input.UserInputType == Enum.UserInputType.Keyboard then
+                    CurrentKey = Input.KeyCode
+                    IsListening = false
+                    if InputConnection then
+                        InputConnection:Disconnect()
+                        InputConnection = nil
+                    end
+                    UpdateDisplay()
+                    SetupBind()
+                    SimpleUI.SaveManager:WriteBinding(SaveBinding, CurrentKey and CurrentKey.Name or nil)
+                end
+            end)
+    end)
+
+    if not IsMobile then
+        Display.MouseEnter:Connect(function()
+            if not IsListening then
+                local CurrentTheme = Window and self.ThemeManager:GetCurrentTheme(Window) or Theme
+                TweenService:Create(Display, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
+                    BackgroundColor3 = CurrentTheme.TertiaryHover
+                }):Play()
+            end
+        end)
+        Display.MouseLeave:Connect(function()
+            if not IsListening then
+                local CurrentTheme = Window and self.ThemeManager:GetCurrentTheme(Window) or Theme
+                TweenService:Create(Display, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
+                    BackgroundColor3 = CurrentTheme.Tertiary
+                }):Play()
+            end
+        end)
+    end
+
+    UpdateDisplay()
+    SetupBind()
+
+    if Window then
+        self.ThemeManager:RegisterElement(Window, Display, {
+            BackgroundColor3 = function(Element, Theme)
+                if not IsListening then
+                    Element.BackgroundColor3 = Theme.Tertiary
+                end
+            end
+        })
+    end
+
+    return {
+        GetKey = function(self)
+            return CurrentKey
+        end,
+        SetKey = function(self, Key)
+            if Key and typeof(Key) ~= "EnumItem" then
+                EH:Guard(false, "Keybind:SetKey", "Key must be a KeyCode Enum", EH.Levels.WARN)
+                return
+            end
+            CurrentKey = Key
+            UpdateDisplay()
+            SetupBind()
+            SimpleUI.SaveManager:WriteBinding(SaveBinding, CurrentKey and CurrentKey.Name or nil)
+        end,
+        Clear = function(self)
+            CurrentKey = nil
+            UpdateDisplay()
+            if BindConnection then
+                BindConnection:Disconnect()
+                BindConnection = nil
+            end
+            SimpleUI.SaveManager:WriteBinding(SaveBinding, nil)
+        end,
+        SetDescription = function(self, NewDescription)
+            local HadDescription = Description ~= nil and Description.Visible
+            local HasNewDescription = NewDescription and NewDescription ~= ""
+            if Description and NewDescription then
+                Description.Text = NewDescription
+                Description.Visible = true
+            elseif Description and not NewDescription then
+                Description.Visible = false
+            elseif not Description and NewDescription then
+                Description = SimpleUI.ComponentBuilder:CreateDescription(Zones.TextZone, NewDescription, Theme, 2)
+                if Window then
+                    SimpleUI.ThemeManager:RegisterElement(Window, Description, {
+                        TextColor3 = "TextSecondary",
+                        Font = "FontSecondary"
+                    })
+                end
+            end
+            if HadDescription ~= HasNewDescription then
+                SimpleUI.ComponentBuilder:UpdateDescriptionPadding(Zones, HasNewDescription)
+            end
+        end,
+        GetElements = function(self)
+            return {
+                Container = Zones.Container,
+                Label = Label,
+                Description = Description,
+                Display = Display,
+                DisplayLabel = DisplayLabel
+            }
+        end
+    }
+end
+
+function SimpleUI:CreateSlider(Page, Text, Min, Max, DefaultValue, Callback, Options)
+    local EH = self.ErrorHandler
+    if not EH:ValidateInstance(Page, "GuiObject", "CreateSlider") then
+        return nil
+    end
+    if not EH:ValidateType(Text, "string", "Text", "CreateSlider") then
+        Text = "Slider"
+    end
+    if not EH:ValidateType(Min, "number", "Min", "CreateSlider") then
+        Min = 0
+    end
+    if not EH:ValidateType(Max, "number", "Max", "CreateSlider") then
+        Max = 100
+    end
+    if Min >= Max then
+        EH:Guard(false, "CreateSlider", "Min must be less than Max, swapping values", EH.Levels.WARN)
+        Min, Max = Max, Min
+    end
+    if DefaultValue then
+        if not EH:ValidateType(DefaultValue, "number", "DefaultValue", "CreateSlider") then
+            DefaultValue = Min
+        else
+            DefaultValue = math.clamp(DefaultValue, Min, Max)
+        end
+    else
+        DefaultValue = Min
+    end
+    if Callback then
+        Callback = (EH:ValidateType(Callback, "function", "Callback", "CreateSlider") == false) and nil or Callback
+    end
+    Options = Options or {}
+    local SaveBinding = self.SaveManager:GetBinding(Options, "Slider", Text)
+    if SaveBinding.Enabled and type(SaveBinding.Value) == "number" then
+        DefaultValue = math.clamp(SaveBinding.Value, Min, Max)
+    end
+    local Theme = self.ThemeManager:GetCurrentTheme(self.Utility:GetWindowFromElement(Page))
+    local Window = self.Utility:GetWindowFromElement(Page)
+    local Increment = Options.Increment or 1
+    if not EH:ValidateType(Increment, "number", "Increment", "CreateSlider") then
+        Increment = 1
+    elseif Increment <= 0 then
+        EH:Guard(false, "CreateSlider", "Increment must be positive, using 1", EH.Levels.WARN)
+        Increment = 1
+    end
+    local HasDescription = Options.Description and Options.Description ~= ""
+    local Zones = self.ComponentBuilder:CreateContainer({
+        Parent = Page,
+        Layout = "Stacked",
+        MinHeight = 50,
+        Padding = HasDescription and {
+            Top = self.Constants.Padding.Large,
+            Bottom = self.Constants.Padding.Large,
+            Left = self.Constants.Padding.Large,
+            Right = self.Constants.Padding.Small
+        } or {
+            Top = 2,
+            Bottom = 2,
+            Left = self.Constants.Padding.Large,
+            Right = self.Constants.Padding.Small
+        },
+        Spacing = HasDescription and self.Constants.Spacing.Normal or self.Constants.Spacing.Tight,
+        HasDescription = HasDescription,
+        CornerRadius = self.Constants.Corner.Medium,
+        ColorTier = "Secondary"
+    }, Theme)
+    local LabelContainer = self.Utility:CreateInstance("Frame", {
+        Size = UDim2.new(1, 0, 0, 20),
+        BackgroundTransparency = 1,
+        LayoutOrder = 1,
+        ZIndex = self.Constants.ZIndex.Overlay
+    }, Zones.TextZone)
+    local Label = self.ComponentBuilder:CreateLabel(LabelContainer, Text, Theme, {
+        ColorTier = "TextPrimary",
+        Size = 14,
+        WidthOffset = -60
+    })
+    local ValueLabel = self.Utility:CreateInstance("TextLabel", {
+        Size = UDim2.new(0, 50, 1, 0),
+        Position = UDim2.new(1, 0, 0, 0),
+        AnchorPoint = Vector2.new(1, 0),
+        BackgroundTransparency = 1,
+        Text = tostring(DefaultValue or Min),
+        TextColor3 = Theme.TextSecondary,
+        TextSize = 13,
+        Font = Theme.FontSecondary,
+        TextXAlignment = Enum.TextXAlignment.Right,
+        ZIndex = self.Constants.ZIndex.Overlay
+    }, LabelContainer)
+    local Description = HasDescription and
+                            self.ComponentBuilder:CreateDescription(Zones.TextZone, Options.Description, Theme, 2) or
+                            nil
+    local TrackContainer = self.Utility:CreateInstance("Frame", {
+        Size = UDim2.new(1, 0, 0, 24),
+        BackgroundTransparency = 1,
+        LayoutOrder = 3,
+        ZIndex = self.Constants.ZIndex.Overlay
+    }, Zones.TextZone)
+    local Track = self.Utility:CreateInstance("Frame", {
+        Size = UDim2.new(1, 0, 0, 4),
+        Position = UDim2.new(0, 0, 0.5, 0),
+        AnchorPoint = Vector2.new(0, 0.5),
+        BackgroundColor3 = Theme.TertiaryPressed,
+        BorderSizePixel = 0,
+        ZIndex = self.Constants.ZIndex.Overlay
+    }, TrackContainer)
+    self.Utility:CreateInstance("UICorner", {
+        CornerRadius = UDim.new(1, 0)
+    }, Track)
+    local Fill = self.Utility:CreateInstance("Frame", {
+        Size = UDim2.new(0, 0, 1, 0),
+        BackgroundColor3 = Theme.Accent,
+        BorderSizePixel = 0,
+        ZIndex = self.Constants.ZIndex.Modal
+    }, Track)
+    self.Utility:CreateInstance("UICorner", {
+        CornerRadius = UDim.new(1, 0)
+    }, Fill)
+    local Thumb = self.Utility:CreateInstance("Frame", {
+        Size = UDim2.new(0, 14, 0, 14),
+        Position = UDim2.new(0, 0, 0.5, 0),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundColor3 = Theme.TextActive,
+        BorderSizePixel = 0,
+        ZIndex = self.Constants.ZIndex.Notification
+    }, Track)
+    self.Utility:CreateInstance("UICorner", {
+        CornerRadius = UDim.new(1, 0)
+    }, Thumb)
+    local ThemeBindings = {
+        [Zones.Container] = {
+            BackgroundColor3 = "Secondary",
+            BackgroundTransparency = "TransparencySecondary"
+        },
+        [Label] = {
+            TextColor3 = "TextPrimary",
+            Font = "FontSecondary"
+        },
+        [ValueLabel] = {
+            TextColor3 = "TextSecondary",
+            Font = "FontSecondary"
+        },
+        [Track] = {
+            BackgroundColor3 = "TertiaryPressed"
+        },
+        [Fill] = {
+            BackgroundColor3 = "Accent"
+        },
+        [Thumb] = {
+            BackgroundColor3 = "TextActive"
+        }
+    }
+    if Description then
+        ThemeBindings[Description] = {
+            TextColor3 = "TextSecondary",
+            Font = "FontSecondary"
+        }
+    end
+    if Window then
+        self.ThemeManager:RegisterMultiple(Window, ThemeBindings)
+    end
+    local IsDragging = false
+    local Value = DefaultValue or Min
+    local function RoundToIncrement(Number)
+        return math.floor(Number / Increment + 0.5) * Increment
+    end
+    local function UpdateSlider(NewValue)
+        Value = math.clamp(RoundToIncrement(NewValue), Min, Max)
+        local Percent = (Value - Min) / (Max - Min)
+        Fill.Size = UDim2.new(Percent, 0, 1, 0)
+        Thumb.Position = UDim2.new(Percent, 0, 0.5, 0)
+        ValueLabel.Text = tostring(Value)
+        SimpleUI.SaveManager:WriteBinding(SaveBinding, Value)
+        if Callback then
+            EH:Try(function()
+                Callback(Value)
+            end)
+        end
+    end
+    local function HandleInput(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+            IsDragging = true
+            local Percent = math.clamp((Input.Position.X - Track.AbsolutePosition.X) / Track.AbsoluteSize.X, 0, 1)
+            UpdateSlider(Min + (Max - Min) * Percent)
+        end
+    end
+    Track.InputBegan:Connect(HandleInput)
+    Thumb.InputBegan:Connect(HandleInput)
+    UserInputService.InputChanged:Connect(function(Input)
+        if IsDragging and
+            (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) then
+            local Percent = math.clamp((Input.Position.X - Track.AbsolutePosition.X) / Track.AbsoluteSize.X, 0, 1)
+            UpdateSlider(Min + (Max - Min) * Percent)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+            IsDragging = false
+        end
+    end)
+    UpdateSlider(Value)
+    return {
+        GetValue = function(self)
+            return Value
+        end,
+        SetValue = function(self, NewValue)
+            if EH:ValidateType(NewValue, "number", "NewValue", "Slider:SetValue") then
+                UpdateSlider(NewValue)
+            end
+        end,
+        SetMin = function(self, NewMin)
+            if EH:ValidateType(NewMin, "number", "NewMin", "Slider:SetMin") then
+                if NewMin < Max then
+                    Min = NewMin
+                    UpdateSlider(Value)
+                else
+                    EH:Guard(false, "Slider:SetMin", "Min must be less than Max", EH.Levels.WARN)
+                end
+            end
+        end,
+        SetMax = function(self, NewMax)
+            if EH:ValidateType(NewMax, "number", "NewMax", "Slider:SetMax") then
+                if NewMax > Min then
+                    Max = NewMax
+                    UpdateSlider(Value)
+                else
+                    EH:Guard(false, "Slider:SetMax", "Max must be greater than Min", EH.Levels.WARN)
+                end
+            end
+        end,
+        SetDescription = function(self, NewDescription)
+            local HadDescription = Description ~= nil and Description.Visible
+            local HasNewDescription = NewDescription and NewDescription ~= ""
+            if Description and NewDescription then
+                Description.Text = NewDescription
+                Description.Visible = true
+            elseif Description and not NewDescription then
+                Description.Visible = false
+            elseif not Description and NewDescription then
+                Description = SimpleUI.ComponentBuilder:CreateDescription(Zones.TextZone, NewDescription, Theme, 2)
+                if Window then
+                    SimpleUI.ThemeManager:RegisterElement(Window, Description, {
+                        TextColor3 = "TextSecondary",
+                        Font = "FontSecondary"
+                    })
+                end
+            end
+            if HadDescription ~= HasNewDescription then
+                SimpleUI.ComponentBuilder:UpdateDescriptionPadding(Zones, HasNewDescription)
+            end
+        end,
+        GetElements = function(self)
+            return {
+                Container = Zones.Container,
+                Label = Label,
+                ValueLabel = ValueLabel,
+                Description = Description,
+                Track = Track,
+                Fill = Fill,
+                Thumb = Thumb
+            }
+        end
+    }
+end
+
+function SimpleUI:CreateParagraph(Page, Title, Fields, Options)
+    local EH = self.ErrorHandler
+    if not EH:ValidateInstance(Page, "GuiObject", "CreateParagraph") then
+        return nil
+    end
+    if not EH:ValidateType(Title, "string", "Title", "CreateParagraph") then
+        Title = "Paragraph"
+    end
+    if Fields and not EH:ValidateType(Fields, "table", "Fields", "CreateParagraph") then
+        Fields = {}
+    end
+    Options = Options or {}
+    local Theme = self.ThemeManager:GetCurrentTheme(self.Utility:GetWindowFromElement(Page))
+    local Window = self.Utility:GetWindowFromElement(Page)
+    local Container = self.Utility:CreateInstance("Frame", {
+        Size = UDim2.new(1, 0, 0, 0),
+        AutomaticSize = Enum.AutomaticSize.Y,
+        BackgroundColor3 = Theme.Secondary,
+        BackgroundTransparency = Theme.TransparencySecondary,
+        BorderSizePixel = 0,
+        ZIndex = self.Constants.ZIndex.Control
+    }, Page)
+    if not Container then
+        EH:Guard(false, "CreateParagraph", "Failed to create container", EH.Levels.ERROR)
+        return nil
+    end
+    self.Utility:CreateInstance("UICorner", {
+        CornerRadius = UDim.new(0, self.Constants.Corner.Medium)
+    }, Container)
+    self.Utility:CreateInstance("UIPadding", {
+        PaddingTop = UDim.new(0, self.Constants.Padding.Large),
+        PaddingBottom = UDim.new(0, self.Constants.Padding.Large),
+        PaddingLeft = UDim.new(0, self.Constants.Padding.Large),
+        PaddingRight = UDim.new(0, self.Constants.Padding.Large)
+    }, Container)
+    local ContentFrame = self.Utility:CreateInstance("Frame", {
+        Size = UDim2.new(1, 0, 0, 0),
+        AutomaticSize = Enum.AutomaticSize.Y,
+        BackgroundTransparency = 1,
+        ZIndex = self.Constants.ZIndex.Overlay
+    }, Container)
+    self.Utility:CreateInstance("UIListLayout", {
+        FillDirection = Enum.FillDirection.Vertical,
+        HorizontalAlignment = Enum.HorizontalAlignment.Left,
+        VerticalAlignment = Enum.VerticalAlignment.Top,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, self.Constants.Spacing.Normal)
+    }, ContentFrame)
+    local TitleLabel = self.Utility:CreateInstance("TextLabel", {
+        Size = UDim2.new(1, 0, 0, 0),
+        BackgroundTransparency = 1,
+        Text = Title or "Paragraph",
+        TextSize = 16,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        TextWrapped = true,
+        LayoutOrder = 0,
+        ZIndex = self.Constants.ZIndex.Overlay,
+        TextColor3 = Theme.TextActive,
+        Font = Theme.FontPrimary
+    }, ContentFrame)
+    local ThemeBindings = {
+        [Container] = {
+            BackgroundColor3 = function(Element, CurrentTheme)
+                Element.BackgroundColor3 = CurrentTheme.Secondary
+            end,
+            BackgroundTransparency = function(Element, CurrentTheme)
+                Element.BackgroundTransparency = CurrentTheme.TransparencySecondary
+            end
+        },
+        [TitleLabel] = {
+            TextColor3 = function(Element, CurrentTheme)
+                Element.TextColor3 = CurrentTheme.TextActive
+            end,
+            Font = "FontPrimary"
+        }
+    }
+    if Window then
+        self.ThemeManager:RegisterMultiple(Window, ThemeBindings)
+    end
+    local FieldElements = {}
+    local FieldCounter = 0
+    local function CreateField(FieldData, LayoutOrder)
+        if type(FieldData) ~= "table" and type(FieldData) ~= "string" then
+            EH:Guard(false, "Paragraph:CreateField", "Invalid field data type", EH.Levels.WARN)
+            return nil
+        end
+        FieldCounter = FieldCounter + 1
+        local FieldId = "Field_" .. FieldCounter
+        local IsSubField = FieldData.IsSubField or false
+        local FieldText = type(FieldData) == "string" and FieldData or (FieldData.Text or "")
+        if not EH:ValidateType(FieldText, "string", "FieldText", "Paragraph:CreateField") then
+            FieldText = ""
+        end
+        local CurrentTheme = Window and self.ThemeManager:GetCurrentTheme(Window) or Theme
+        local Field = self.Utility:CreateInstance("TextLabel", {
+            Size = UDim2.new(1, IsSubField and -20 or 0, 0, 0),
+            Position = IsSubField and UDim2.new(0, 20, 0, 0) or UDim2.new(0, 0, 0, 0),
+            BackgroundTransparency = 1,
+            Text = FieldText,
+            TextSize = IsSubField and 13 or 14,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            AutomaticSize = Enum.AutomaticSize.Y,
+            TextWrapped = true,
+            LayoutOrder = LayoutOrder or (FieldCounter + 1),
+            ZIndex = self.Constants.ZIndex.Overlay,
+            TextColor3 = IsSubField and CurrentTheme.TextSecondary or CurrentTheme.TextActive,
+            Font = CurrentTheme.FontSecondary
+        }, ContentFrame)
+        if not Field then
+            EH:Guard(false, "Paragraph:CreateField", "Failed to create field", EH.Levels.WARN)
+            return nil
+        end
+        if Window then
+            self.ThemeManager:RegisterElement(Window, Field, {
+                TextColor3 = function(Element, CurrentTheme)
+                    Element.TextColor3 = IsSubField and CurrentTheme.TextSecondary or CurrentTheme.TextActive
+                end,
+                Font = "FontSecondary"
+            })
+        end
+        FieldElements[FieldId] = {
+            Element = Field,
+            Data = type(FieldData) == "table" and FieldData or {
+                Text = FieldData,
+                IsSubField = false
+            },
+            Id = FieldId
+        }
+        return FieldId, Field
+    end
+    if Fields and type(Fields) == "table" then
+        for Index, FieldData in ipairs(Fields) do
+            EH:Try(function()
+                CreateField(FieldData, Index)
+            end)
+        end
+    end
+    return {
+        AddField = function(self, Text, IsSubField, Position)
+            if not EH:ValidateType(Text, "string", "Text", "Paragraph:AddField") then
+                return nil
+            end
+            return EH:Try(function()
+                return CreateField({
+                    Text = Text,
+                    IsSubField = IsSubField or false
+                }, Position or (FieldCounter + 2))
+            end)
+        end,
+        RemoveField = function(self, FieldId)
+            if not EH:ValidateType(FieldId, "string", "FieldId", "Paragraph:RemoveField") then
+                return false
+            end
+            if not FieldElements[FieldId] then
+                EH:Guard(false, "Paragraph:RemoveField", string.format("Field '%s' not found", FieldId), EH.Levels.WARN)
+                return false
+            end
+            return EH:Try(function()
+                FieldElements[FieldId].Element:Destroy()
+                FieldElements[FieldId] = nil
+                return true
+            end, function()
+                return false
+            end)
+        end,
+        SetField = function(self, FieldId, Text)
+            if not EH:ValidateType(FieldId, "string", "FieldId", "Paragraph:SetField") then
+                return false
+            end
+            if not EH:ValidateType(Text, "string", "Text", "Paragraph:SetField") then
+                return false
+            end
+            if not FieldElements[FieldId] then
+                EH:Guard(false, "Paragraph:SetField", string.format("Field '%s' not found", FieldId), EH.Levels.WARN)
+                return false
+            end
+            return EH:Try(function()
+                FieldElements[FieldId].Element.Text = Text
+                FieldElements[FieldId].Data.Text = Text
+                return true
+            end, function()
+                return false
+            end)
+        end,
+        GetField = function(self, FieldId)
+            if not EH:ValidateType(FieldId, "string", "FieldId", "Paragraph:GetField") then
+                return nil
+            end
+            return FieldElements[FieldId] and FieldElements[FieldId].Data.Text or nil
+        end,
+        FindField = function(self, SearchText)
+            if not EH:ValidateType(SearchText, "string", "SearchText", "Paragraph:FindField") then
+                return nil
+            end
+            for Id, FieldData in pairs(FieldElements) do
+                if FieldData.Data.Text:find(SearchText, 1, true) then
+                    return Id, FieldData.Data.Text
+                end
+            end
+            return nil
+        end,
+        GetAllFields = function(self)
+            local Result = {}
+            for Id, FieldData in pairs(FieldElements) do
+                table.insert(Result, {
+                    Id = Id,
+                    Text = FieldData.Data.Text,
+                    IsSubField = FieldData.Data.IsSubField
+                })
+            end
+            return Result
+        end,
+        SetFields = function(self, NewFields)
+            if not EH:ValidateType(NewFields, "table", "NewFields", "Paragraph:SetFields") then
+                return false
+            end
+            return EH:Try(function()
+                for Id, FieldData in pairs(FieldElements) do
+                    FieldData.Element:Destroy()
+                end
+                FieldElements = {}
+                FieldCounter = 0
+                if NewFields and type(NewFields) == "table" then
+                    for Index, FieldData in ipairs(NewFields) do
+                        CreateField(FieldData, Index)
+                    end
+                end
+                return true
+            end, function()
+                return false
+            end)
+        end,
+        ClearFields = function(self)
+            return EH:Try(function()
+                for Id, FieldData in pairs(FieldElements) do
+                    FieldData.Element:Destroy()
+                end
+                FieldElements = {}
+                FieldCounter = 0
+                return true
+            end, function()
+                return false
+            end)
+        end,
+        SetTitle = function(self, NewTitle)
+            if not EH:ValidateType(NewTitle, "string", "NewTitle", "Paragraph:SetTitle") then
+                return false
+            end
+            TitleLabel.Text = NewTitle
+            return true
+        end,
+        GetFieldCount = function(self)
+            local Count = 0
+            for _ in pairs(FieldElements) do
+                Count = Count + 1
+            end
+            return Count
+        end,
+        GetElements = function(self)
+            return {
+                Container = Container,
+                ContentFrame = ContentFrame,
+                TitleLabel = TitleLabel,
+                Fields = FieldElements
+            }
+        end
+    }
+end
+
+function SimpleUI:CreateDropdown(Page, Text, Options, DefaultValue, Callback, DropdownOptions)
+    local EH = self.ErrorHandler
+    if not EH:ValidateInstance(Page, "GuiObject", "CreateDropdown") then
+        return nil
+    end
+    if not EH:ValidateType(Text, "string", "Text", "CreateDropdown") then
+        Text = "Dropdown"
+    end
+    if not EH:ValidateType(Options, "table", "Options", "CreateDropdown") then
+        Options = {}
+    end
+    if #Options == 0 then
+        EH:Guard(false, "CreateDropdown", "Options array is empty", EH.Levels.WARN)
+    end
+    if Callback and not EH:ValidateType(Callback, "function", "Callback", "CreateDropdown") then
+        Callback = nil
+    end
+    DropdownOptions = DropdownOptions or {}
+    local Theme = self.ThemeManager:GetCurrentTheme(self.Utility:GetWindowFromElement(Page))
+    local IsMobile = self.Utility:IsMobile()
+    local Window = self.Utility:GetWindowFromElement(Page)
+    local IsMultiSelect = DropdownOptions.MultiSelect or false
+    local ChangedEvent = Instance.new("BindableEvent")
+    local HasDescription = DropdownOptions.Description and DropdownOptions.Description ~= ""
+    local SaveBinding = self.SaveManager:GetBinding(DropdownOptions, "Dropdown", Text)
+    if SaveBinding.Enabled then
+        if IsMultiSelect and type(SaveBinding.Value) == "table" then
+            DefaultValue = SaveBinding.Value
+        elseif not IsMultiSelect and type(SaveBinding.Value) == "string" then
+            DefaultValue = SaveBinding.Value
+        end
+    end
+
+    local Zones = self.ComponentBuilder:CreateContainer({
+        Parent = Page,
+        Layout = "TextLeft",
+        TextWidth = 0.55,
+        MinHeight = 35,
+        Padding = HasDescription and {
+            Top = self.Constants.Padding.Large,
+            Bottom = self.Constants.Padding.Large,
+            Left = self.Constants.Padding.Large,
+            Right = self.Constants.Padding.Small
+        } or {
+            Top = 2,
+            Bottom = 2,
+            Left = self.Constants.Padding.Large,
+            Right = self.Constants.Padding.Small
+        },
+        Spacing = HasDescription and self.Constants.Spacing.Tight or 0,
+        HasDescription = HasDescription,
+        CornerRadius = self.Constants.Corner.Medium,
+        ColorTier = "Secondary"
