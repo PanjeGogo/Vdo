@@ -13086,7 +13086,7 @@ local window = SimpleUI:CreateWindow({
     Brand = {
         Name = "SimpleScripts"
     },
-    DefaultScale = SimpleUI.Utility:IsMobile() and 0.50 or 0.75,
+    DefaultScale = SimpleUI.Utility:IsMobile() and 0.85 or 1.00,
     TabMode = "Dynamic",
     CanResize = true,
     Footer = true,
