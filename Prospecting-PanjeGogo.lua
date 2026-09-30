@@ -1,3 +1,4 @@
+-- PanjeGogo
 local gethui = gethui or function()
     return game:GetService("CoreGui")
 end
