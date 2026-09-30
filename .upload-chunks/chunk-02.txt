@@ -1,0 +1,1000 @@
+        SecondaryPressed = Color3.fromRGB(239, 220, 255),
+        Tertiary = Color3.fromRGB(228, 200, 252),
+        TertiaryHover = Color3.fromRGB(214, 178, 248),
+        TertiaryActive = Color3.fromRGB(198, 154, 242),
+        TertiaryPressed = Color3.fromRGB(222, 192, 250),
+        Quaternary = Color3.fromRGB(248, 236, 255),
+        QuaternaryHover = Color3.fromRGB(238, 220, 255),
+        Separator = Color3.fromRGB(204, 158, 240),
+        SeparatorTransparency = 0.30,
+        BoxBackground = Color3.fromRGB(255, 250, 255),
+        TextPrimary = Color3.fromRGB(52, 14, 80),
+        TextSecondary = Color3.fromRGB(118, 48, 162),
+        TextInactive = Color3.fromRGB(174, 120, 210),
+        TextActive = Color3.fromRGB(32, 6, 52),
+        Accent = Color3.fromRGB(188, 80, 255),
+        TabAccent = Color3.fromRGB(210, 120, 255),
+        TabIconActive = Color3.fromRGB(188, 80, 255),
+        TabIconHover = Color3.fromRGB(56, 12, 90),
+        TabIconInactive = Color3.fromRGB(174, 120, 210),
+        FontPrimary = Enum.Font.GothamBold,
+        FontSecondary = Enum.Font.GothamMedium,
+        FontSizePrimary = 18,
+        FontSizeSecondary = 16,
+        TransparencyPrimary = 0.0,
+        TransparencySecondary = 0.35,
+        TransparencyTertiary = 0.17
+    },
+
+    Bubblegum = {
+        Primary = Color3.fromRGB(255, 238, 248),
+        Secondary = Color3.fromRGB(255, 214, 238),
+        SecondaryHover = Color3.fromRGB(255, 190, 226),
+        SecondaryActive = Color3.fromRGB(252, 164, 212),
+        SecondaryPressed = Color3.fromRGB(255, 204, 233),
+        Tertiary = Color3.fromRGB(250, 178, 222),
+        TertiaryHover = Color3.fromRGB(244, 154, 208),
+        TertiaryActive = Color3.fromRGB(236, 128, 192),
+        TertiaryPressed = Color3.fromRGB(248, 168, 216),
+        Quaternary = Color3.fromRGB(255, 228, 243),
+        QuaternaryHover = Color3.fromRGB(255, 210, 234),
+        Separator = Color3.fromRGB(238, 130, 196),
+        SeparatorTransparency = 0.26,
+        BoxBackground = Color3.fromRGB(255, 246, 252),
+        TextPrimary = Color3.fromRGB(96, 10, 56),
+        TextSecondary = Color3.fromRGB(192, 40, 120),
+        TextInactive = Color3.fromRGB(226, 130, 178),
+        TextActive = Color3.fromRGB(64, 4, 36),
+        Accent = Color3.fromRGB(255, 20, 120),
+        TabAccent = Color3.fromRGB(255, 70, 155),
+        TabIconActive = Color3.fromRGB(255, 20, 120),
+        TabIconHover = Color3.fromRGB(80, 6, 44),
+        TabIconInactive = Color3.fromRGB(226, 130, 178),
+        FontPrimary = Enum.Font.GothamBold,
+        FontSecondary = Enum.Font.GothamMedium,
+        FontSizePrimary = 18,
+        FontSizeSecondary = 16,
+        TransparencyPrimary = 0.0,
+        TransparencySecondary = 0.34,
+        TransparencyTertiary = 0.16
+    },
+
+    CottonCandy = {
+        Primary = Color3.fromRGB(240, 248, 255),
+        Secondary = Color3.fromRGB(220, 236, 255),
+        SecondaryHover = Color3.fromRGB(198, 222, 255),
+        SecondaryActive = Color3.fromRGB(174, 206, 255),
+        SecondaryPressed = Color3.fromRGB(210, 230, 255),
+        Tertiary = Color3.fromRGB(192, 218, 255),
+        TertiaryHover = Color3.fromRGB(166, 202, 252),
+        TertiaryActive = Color3.fromRGB(140, 184, 248),
+        TertiaryPressed = Color3.fromRGB(180, 212, 254),
+        Quaternary = Color3.fromRGB(230, 242, 255),
+        QuaternaryHover = Color3.fromRGB(212, 230, 255),
+        Separator = Color3.fromRGB(148, 196, 255),
+        SeparatorTransparency = 0.28,
+        BoxBackground = Color3.fromRGB(248, 252, 255),
+        TextPrimary = Color3.fromRGB(10, 36, 80),
+        TextSecondary = Color3.fromRGB(40, 100, 190),
+        TextInactive = Color3.fromRGB(110, 158, 220),
+        TextActive = Color3.fromRGB(4, 20, 56),
+        Accent = Color3.fromRGB(80, 160, 255),
+        TabAccent = Color3.fromRGB(116, 184, 255),
+        TabIconActive = Color3.fromRGB(80, 160, 255),
+        TabIconHover = Color3.fromRGB(8, 32, 80),
+        TabIconInactive = Color3.fromRGB(110, 158, 220),
+        FontPrimary = Enum.Font.GothamBold,
+        FontSecondary = Enum.Font.GothamMedium,
+        FontSizePrimary = 18,
+        FontSizeSecondary = 16,
+        TransparencyPrimary = 0.0,
+        TransparencySecondary = 0.35,
+        TransparencyTertiary = 0.17
+    },
+
+    Matcha = {
+        Primary = Color3.fromRGB(236, 248, 238),
+        Secondary = Color3.fromRGB(214, 238, 218),
+        SecondaryHover = Color3.fromRGB(190, 226, 196),
+        SecondaryActive = Color3.fromRGB(164, 212, 172),
+        SecondaryPressed = Color3.fromRGB(204, 233, 209),
+        Tertiary = Color3.fromRGB(180, 220, 188),
+        TertiaryHover = Color3.fromRGB(156, 206, 166),
+        TertiaryActive = Color3.fromRGB(130, 190, 142),
+        TertiaryPressed = Color3.fromRGB(170, 214, 178),
+        Quaternary = Color3.fromRGB(226, 244, 228),
+        QuaternaryHover = Color3.fromRGB(206, 234, 210),
+        Separator = Color3.fromRGB(130, 196, 142),
+        SeparatorTransparency = 0.28,
+        BoxBackground = Color3.fromRGB(246, 254, 248),
+        TextPrimary = Color3.fromRGB(10, 44, 18),
+        TextSecondary = Color3.fromRGB(34, 110, 52),
+        TextInactive = Color3.fromRGB(96, 164, 110),
+        TextActive = Color3.fromRGB(4, 26, 10),
+        Accent = Color3.fromRGB(60, 168, 84),
+        TabAccent = Color3.fromRGB(88, 196, 112),
+        TabIconActive = Color3.fromRGB(60, 168, 84),
+        TabIconHover = Color3.fromRGB(10, 50, 20),
+        TabIconInactive = Color3.fromRGB(96, 164, 110),
+        FontPrimary = Enum.Font.GothamBold,
+        FontSecondary = Enum.Font.GothamMedium,
+        FontSizePrimary = 18,
+        FontSizeSecondary = 16,
+        TransparencyPrimary = 0.0,
+        TransparencySecondary = 0.34,
+        TransparencyTertiary = 0.16
+    }
+}
+
+SimpleUI.Themes.DefaultTheme = SimpleUI.Themes.Obsidian
+
+-- Helper frameworks
+do
+    SimpleUI.ErrorHandler = {}
+    do
+        local ErrorLevels = {
+            SILENT = 0,
+            WARN = 1,
+            ERROR = 2,
+            CRITICAL = 3
+        }
+        SimpleUI.ErrorHandler.Level = ErrorLevels.WARN
+        SimpleUI.ErrorHandler.Levels = ErrorLevels
+        local Colors = {
+            [ErrorLevels.WARN] = "255,255,0",
+            [ErrorLevels.ERROR] = "255,100,100",
+            [ErrorLevels.CRITICAL] = "255,0,0"
+        }
+
+        RunService.Heartbeat:Connect(function()
+            local Console = CoreGui:FindFirstChild("DevConsoleMaster")
+            if Console then
+                for _, v in pairs(Console:GetDescendants()) do
+                    if v:IsA("TextLabel") then
+                        v.RichText = true
+                    end
+                end
+            end
+        end)
+
+        local function RichPrint(Color, Text)
+            local RGB = Colors[Color] or "255,255,255"
+            print('<font color="rgb(' .. RGB .. ')">' .. tostring(Text) .. '</font>')
+        end
+        local function FormatError(Context, Message, Level)
+            local Prefix = ({
+                [ErrorLevels.WARN] = "[SimpleUI:WARN]",
+                [ErrorLevels.ERROR] = "[SimpleUI:ERROR]",
+                [ErrorLevels.CRITICAL] = "[SimpleUI:CRITICAL]"
+            })[Level] or "[SimpleUI]"
+            return Prefix .. " " .. Context .. ": " .. Message
+        end
+        local function LogError(Context, Message, Level)
+            if Level == ErrorLevels.SILENT then
+                return
+            end
+            if Level < SimpleUI.ErrorHandler.Level then
+                return
+            end
+            RichPrint(Level, FormatError(Context, Message, Level))
+        end
+        function SimpleUI.ErrorHandler:Wrap(Func, Context, DefaultReturn)
+            return function(...)
+                local Success, Result = pcall(Func, ...)
+                if not Success then
+                    LogError(Context, tostring(Result), ErrorLevels.ERROR)
+                    return DefaultReturn
+                end
+                return Result
+            end
+        end
+
+        function SimpleUI.ErrorHandler:Guard(Condition, Context, Message, Level)
+            if not Condition then
+                LogError(Context, Message, Level or ErrorLevels.WARN)
+                return false
+            end
+            return true
+        end
+
+        function SimpleUI.ErrorHandler:ValidateType(Value, ExpectedType, ParamName, Context)
+            local ActualType = typeof(Value)
+            if ActualType ~= ExpectedType then
+                LogError(Context,
+                    "Invalid type for '" .. ParamName .. "': expected " .. ExpectedType .. ", got " .. ActualType,
+                    ErrorLevels.WARN)
+                return false
+            end
+            return true
+        end
+
+        function SimpleUI.ErrorHandler:ValidateRange(Value, Min, Max, ParamName, Context)
+            if Value < Min or Value > Max then
+                LogError(Context,
+                    "'" .. ParamName .. "' out of range: " .. tostring(Value) .. " not in [" .. tostring(Min) .. ", " ..
+                        tostring(Max) .. "]", ErrorLevels.WARN)
+                return false
+            end
+            return true
+        end
+
+        function SimpleUI.ErrorHandler:ValidateInstance(Instance, ExpectedClass, Context)
+            if not Instance then
+                LogError(Context, "Instance is nil", ErrorLevels.WARN)
+                return false
+            end
+            if not Instance:IsA(ExpectedClass) then
+                LogError(Context, "Invalid instance type: expected " .. ExpectedClass .. ", got " .. Instance.ClassName,
+                    ErrorLevels.WARN)
+                return false
+            end
+            return true
+        end
+
+        function SimpleUI.ErrorHandler:ValidateOptions(Options, Required, Optional, Context)
+            Options = Options or {}
+            for _, Key in ipairs(Required or {}) do
+                if Options[Key] == nil then
+                    LogError(Context, "Missing required option: '" .. Key .. "'", ErrorLevels.WARN)
+                    return false
+                end
+            end
+            local Allowed = {}
+            for _, Key in ipairs(Required or {}) do
+                Allowed[Key] = true
+            end
+            for _, Key in ipairs(Optional or {}) do
+                Allowed[Key] = true
+            end
+            for Key in pairs(Options) do
+                if not Allowed[Key] then
+                    LogError(Context, "Unknown option: '" .. Key .. "'", ErrorLevels.WARN)
+                end
+            end
+            return true
+        end
+
+        function SimpleUI.ErrorHandler:Try(Func, Fallback)
+            local Success, Result = pcall(Func)
+            if not Success then
+                return Fallback and Fallback() or nil
+            end
+            return Result
+        end
+
+        function SimpleUI.ErrorHandler:SetLevel(Level)
+            self.Level = Level
+        end
+    end
+
+    SimpleUI.Security = {}
+    do
+        local ProtectedFunctions = {}
+        local HookedMetatables = {}
+        function SimpleUI.Security:WrapFunction(Func)
+            if not Func or type(Func) ~= "function" then
+                return Func
+            end
+            if ProtectedFunctions[Func] then
+                return ProtectedFunctions[Func]
+            end
+            local Protected = newcclosure(function(...)
+                return Func(...)
+            end)
+            ProtectedFunctions[Func] = Protected
+            return Protected
+        end
+
+        function SimpleUI.Security:SafeCallback(Callback, ...)
+            if not (Callback and typeof(Callback) == "function") then
+                return nil
+            end
+            local _, Result = xpcall(Callback, function(Error)
+                if SimpleUI.ErrorHandler.Level >= SimpleUI.ErrorHandler.Levels.ERROR then
+                    SimpleUI.ErrorHandler:Guard(false, "SafeCallback", tostring(Error),
+                        SimpleUI.ErrorHandler.Levels.ERROR)
+                end
+                return Error
+            end, ...)
+            return Result
+        end
+
+        function SimpleUI.Security:ProtectMetatable(Object)
+            if not Object or HookedMetatables[Object] then
+                return false
+            end
+            local Success = pcall(function()
+                local MT = getmetatable(Object)
+                if not MT then
+                    return
+                end
+                local OriginalIndex = MT.__index
+                local OriginalNewIndex = MT.__newindex
+                local OriginalNamecall = MT.__namecall
+                if OriginalIndex then
+                    MT.__index = newcclosure(function(self, Key)
+                        if type(OriginalIndex) == "function" then
+                            return OriginalIndex(self, Key)
+                        else
+                            return OriginalIndex[Key]
+                        end
+                    end)
+                end
+                if OriginalNewIndex then
+                    MT.__newindex = newcclosure(function(self, Key, Value)
+                        if type(OriginalNewIndex) == "function" then
+                            return OriginalNewIndex(self, Key, Value)
+                        else
+                            OriginalNewIndex[Key] = Value
+                        end
+                    end)
+                end
+                if OriginalNamecall then
+                    MT.__namecall = newcclosure(function(self, ...)
+                        return OriginalNamecall(self, ...)
+                    end)
+                end
+                HookedMetatables[Object] = {
+                    OriginalIndex = OriginalIndex,
+                    OriginalNewIndex = OriginalNewIndex,
+                    OriginalNamecall = OriginalNamecall
+                }
+            end)
+            return Success
+        end
+    end
+
+    SimpleUI.EventProtection = {} -- Deprecated
+    do
+        local ProtectedEvents = {}
+        function SimpleUI.EventProtection:Protect(Event)
+            if not Event or ProtectedEvents[Event] then
+                return false
+            end
+            ProtectedEvents[Event] = true
+            local OriginalConnect = Event.Connect
+            Event.Connect = newcclosure(function(self, ...)
+                return OriginalConnect(self, ...)
+            end)
+            local OriginalWait = Event.Wait
+            Event.Wait = newcclosure(function(self, ...)
+                return OriginalWait(self, ...)
+            end)
+            return true
+        end
+    end
+
+    SimpleUI.ConnectionRegistry = {}
+    do
+        function SimpleUI.ConnectionRegistry:New()
+            local registry = {
+                _connections = {}
+            }
+
+            function registry:Add(connection)
+                if connection and typeof(connection) == "RBXScriptConnection" then
+                    table.insert(self._connections, connection)
+                end
+                return connection
+            end
+
+            function registry:Remove(connection)
+                for i, c in ipairs(self._connections) do
+                    if c == connection then
+                        if c.Connected then
+                            c:Disconnect()
+                        end
+                        table.remove(self._connections, i)
+                        return
+                    end
+                end
+            end
+
+            function registry:Cleanup()
+                for _, c in ipairs(self._connections) do
+                    if c.Connected then
+                        c:Disconnect()
+                    end
+                end
+                table.clear(self._connections)
+            end
+
+            return registry
+        end
+    end
+
+    SimpleUI.MetatableProtection = {}
+    do
+        local ProtectedObjects = {}
+        function SimpleUI.MetatableProtection:Protect(Object)
+            if not Object or ProtectedObjects[Object] then
+                return false
+            end
+            ProtectedObjects[Object] = true
+            return true
+        end
+
+        function SimpleUI.MetatableProtection:ProtectUI(ScreenGui)
+            if not ScreenGui then
+                return false
+            end
+            self:Protect(ScreenGui)
+            for _, Descendant in ipairs(ScreenGui:GetDescendants()) do
+                if Descendant:IsA("GuiObject") then
+                    self:Protect(Descendant)
+                end
+            end
+            return true
+        end
+    end
+
+    SimpleUI.Utility = {}
+    do
+        function SimpleUI.Utility:GetService(ServiceName)
+            return cloneref(game:GetService(ServiceName))
+        end
+
+        function SimpleUI.Utility:IsMobile()
+            return UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+        end
+
+        function SimpleUI.Utility:CreateInstance(ClassName, Properties, Parent)
+            local Instance = Instance.new(ClassName)
+            if Properties then
+                for Property, Value in pairs(Properties) do
+                    Instance[Property] = Value
+                end
+            end
+            if Parent then
+                Instance.Parent = Parent
+            end
+            return Instance
+        end
+
+        function SimpleUI.Utility:GenerateId()
+            local charset =
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?/`~"
+            local rng = Random.new(math.floor(os.clock() * 1e9) + math.floor(tick() * 1e6) + math.random(1, 1e9))
+            local length = rng:NextInteger(24, 40)
+            local output = table.create(length)
+            for i = 1, length do
+                local index = rng:NextInteger(1, #charset)
+                output[i] = charset:sub(index, index)
+            end
+            return table.concat(output)
+        end
+
+        function SimpleUI.Utility:MergeTables(Base, Override)
+            local Result = {}
+            for Key, Value in pairs(Base or {}) do
+                Result[Key] = type(Value) == "table" and self:MergeTables(Value, {}) or Value
+            end
+            for Key, Value in pairs(Override or {}) do
+                if type(Value) == "table" and type(Result[Key]) == "table" then
+                    Result[Key] = self:MergeTables(Result[Key], Value)
+                else
+                    Result[Key] = Value
+                end
+            end
+            return Result
+        end
+
+        function SimpleUI.Utility:ApplyTheme(Properties, ThemeBindings, Theme)
+            local Result = {}
+            local Bindings = {}
+            for Property, Value in pairs(Properties) do
+                Result[Property] = Value
+            end
+            if ThemeBindings then
+                for Property, ThemeKey in pairs(ThemeBindings) do
+                    if Theme[ThemeKey] then
+                        Result[Property] = Theme[ThemeKey]
+                        Bindings[Property] = ThemeKey
+                    end
+                end
+            end
+            return Result, Bindings
+        end
+
+        function SimpleUI.Utility:GetWindowFromElement(Element)
+            local Current = Element
+            while Current do
+                if Current:IsA("ScreenGui") and SimpleUI.Windows[Current] then
+                    return SimpleUI.Windows[Current]
+                end
+                Current = Current.Parent
+            end
+            return nil
+        end
+
+        function SimpleUI.Utility:ParentUI(Element, TargetParent)
+            local Success = pcall(function()
+                local FinalParent
+                pcall(protectgui, Element)
+                FinalParent = gethui()
+                if TargetParent then
+                    if type(TargetParent) == "function" then
+                        FinalParent = TargetParent()
+                    else
+                        FinalParent = TargetParent
+                    end
+                end
+                Element.Parent = FinalParent
+            end)
+            if not (Success and Element.Parent) then
+                Element.Parent = LocalPlayer:WaitForChild("CoreGui", math.huge)
+            end
+        end
+
+        function SimpleUI.Utility:Tween(object, tweenInfo, properties)
+            if not object or not object.Parent then
+                return
+            end
+            TweenService:Create(object, tweenInfo, properties):Play()
+        end
+    end
+
+    SimpleUI.SaveManager = {}
+    do
+        SimpleUI.SaveManager.Enabled = true
+        SimpleUI.SaveManager.AutoSave = true
+        SimpleUI.SaveManager.Folder = "SimpleUI"
+        SimpleUI.SaveManager.FileName = tostring(game.PlaceId) .. ".json"
+        SimpleUI.SaveManager.Values = {}
+        SimpleUI.SaveManager.Loaded = false
+
+        local function hasFilesystem()
+            return type(readfile) == "function" and type(writefile) == "function" and type(isfile) == "function" and
+                       type(makefolder) == "function" and type(isfolder) == "function"
+        end
+
+        local function splitPath(path)
+            local parts = {}
+            for part in tostring(path or ""):gmatch("[^/\\]+") do
+                table.insert(parts, part)
+            end
+            return parts
+        end
+
+        local function ensureFolder(path)
+            if not hasFilesystem() then
+                return false
+            end
+
+            local current = ""
+            for _, part in ipairs(splitPath(path)) do
+                current = current == "" and part or (current .. "/" .. part)
+                if not isfolder(current) then
+                    local ok = pcall(makefolder, current)
+                    if not ok then
+                        return false
+                    end
+                end
+            end
+            return true
+        end
+
+        local function sanitizeKey(value)
+            local text = tostring(value or "value")
+            text = text:gsub("%s+", "_"):gsub("[^%w_%-%.:]", "")
+            return text ~= "" and text or "value"
+        end
+
+        function SimpleUI.SaveManager:IsAvailable()
+            return hasFilesystem()
+        end
+
+        function SimpleUI.SaveManager:Configure(options)
+            options = options or {}
+            if options.Enabled ~= nil then
+                self.Enabled = options.Enabled == true
+            end
+            if options.AutoSave ~= nil then
+                self.AutoSave = options.AutoSave == true
+            end
+            if type(options.Folder) == "string" and options.Folder ~= "" then
+                self.Folder = options.Folder
+            end
+            if type(options.FileName) == "string" and options.FileName ~= "" then
+                self.FileName = options.FileName
+            end
+            if type(options.File) == "string" and options.File ~= "" then
+                self.FileName = options.File
+            end
+            self:Load()
+            return self
+        end
+
+        function SimpleUI.SaveManager:GetPath()
+            return self.Folder .. "/" .. self.FileName
+        end
+
+        function SimpleUI.SaveManager:Load()
+            if self.Loaded then
+                return self.Values
+            end
+            self.Loaded = true
+            self.Values = {}
+
+            if not self.Enabled or not self:IsAvailable() then
+                return self.Values
+            end
+
+            local path = self:GetPath()
+            if not isfile(path) then
+                return self.Values
+            end
+
+            local ok, data = pcall(function()
+                local body = readfile(path)
+                if type(body) ~= "string" or body == "" then
+                    return {}
+                end
+                return SimpleUI.Utility:GetService("HttpService"):JSONDecode(body)
+            end)
+
+            if ok and type(data) == "table" then
+                self.Values = data
+            end
+
+            return self.Values
+        end
+
+        function SimpleUI.SaveManager:Save()
+            if not self.Enabled or not self:IsAvailable() then
+                return false
+            end
+            if not ensureFolder(self.Folder) then
+                return false
+            end
+
+            local ok = pcall(function()
+                local body = SimpleUI.Utility:GetService("HttpService"):JSONEncode(self.Values or {})
+                writefile(self:GetPath(), body)
+            end)
+            return ok
+        end
+
+        function SimpleUI.SaveManager:Get(key, defaultValue)
+            self:Load()
+            if self.Values[key] == nil then
+                return defaultValue
+            end
+            return self.Values[key]
+        end
+
+        function SimpleUI.SaveManager:Set(key, value)
+            if not key then
+                return false
+            end
+            self:Load()
+            self.Values[key] = value
+            if self.AutoSave then
+                return self:Save()
+            end
+            return true
+        end
+
+        function SimpleUI.SaveManager:Remove(key)
+            if not key then
+                return false
+            end
+            self:Load()
+            self.Values[key] = nil
+            if self.AutoSave then
+                return self:Save()
+            end
+            return true
+        end
+
+        function SimpleUI.SaveManager:GetBinding(options, componentType, label)
+            options = options or {}
+            local saveConfig = options.Save
+            if saveConfig == nil then
+                saveConfig = options.Persist
+            end
+
+            local enabled = false
+            local key = options.SaveKey or options.Flag
+            local applyCallback = true
+
+            if type(saveConfig) == "table" then
+                enabled = saveConfig.Enabled ~= false
+                key = saveConfig.Key or saveConfig.Flag or saveConfig.Name or key
+                if saveConfig.ApplyCallback ~= nil then
+                    applyCallback = saveConfig.ApplyCallback == true
+                end
+            elseif saveConfig == true then
+                enabled = true
+            end
+
+            if not enabled then
+                return {
+                    Enabled = false,
+                    HasValue = false,
+                    ApplyCallback = false
+                }
+            end
+
+            key = key or (tostring(componentType or "Component") .. ":" .. sanitizeKey(label))
+            self:Load()
+
+            return {
+                Enabled = self.Enabled and self:IsAvailable(),
+                Key = key,
+                HasValue = self.Values[key] ~= nil,
+                Value = self.Values[key],
+                ApplyCallback = applyCallback
+            }
+        end
+
+        function SimpleUI.SaveManager:WriteBinding(binding, value)
+            if not binding or not binding.Enabled or not binding.Key then
+                return false
+            end
+            if value == nil then
+                return self:Remove(binding.Key)
+            end
+            return self:Set(binding.Key, value)
+        end
+    end
+
+    SimpleUI.ThemeManager = {}
+    do
+        function SimpleUI.ThemeManager:Initialize(Window)
+            local EH = SimpleUI.ErrorHandler
+            if not EH:ValidateType(Window, "table", "Window", "ThemeManager:Initialize") then
+                return false
+            end
+            Window.ThemeData = {
+                Elements = {},
+                CurrentTheme = Window.Theme or SimpleUI.Themes.DefaultTheme
+            }
+            return true
+        end
+
+        function SimpleUI.ThemeManager:GetCurrentTheme(Window)
+            local EH = SimpleUI.ErrorHandler
+            if not Window then
+                EH:Guard(false, "ThemeManager:GetCurrentTheme", "Window is nil, using DefaultTheme", EH.Levels.WARN)
+                return SimpleUI.Themes.DefaultTheme
+            end
+            if not Window.ThemeData then
+                EH:Guard(false, "ThemeManager:GetCurrentTheme", "ThemeData not initialized, using DefaultTheme",
+                    EH.Levels.WARN)
+                return SimpleUI.Themes.DefaultTheme
+            end
+            return Window.ThemeData.CurrentTheme
+        end
+
+        function SimpleUI.ThemeManager:RegisterElement(Window, Element, Bindings)
+            local EH = SimpleUI.ErrorHandler
+            if not Window or not Window.ThemeData then
+                EH:Guard(false, "ThemeManager:RegisterElement", "Invalid window", EH.Levels.WARN)
+                return false
+            end
+            if not Element then
+                EH:Guard(false, "ThemeManager:RegisterElement", "Element is nil", EH.Levels.WARN)
+                return false
+            end
+            if not EH:ValidateType(Bindings, "table", "Bindings", "ThemeManager:RegisterElement") then
+                return false
+            end
+            for Property, ThemeKey in pairs(Bindings) do
+                if EH:ValidateType(Property, "string", "Property", "ThemeManager:RegisterElement") then
+                    local found = false
+                    for _, existing in ipairs(Window.ThemeData.Elements) do
+                        if existing.Element == Element and existing.Property == Property then
+                            existing.ThemeKey = ThemeKey
+                            found = true
+                            break
+                        end
+                    end
+                    if not found then
+                        table.insert(Window.ThemeData.Elements, {
+                            Element = Element,
+                            Property = Property,
+                            ThemeKey = ThemeKey
+                        })
+                    end
+                end
+            end
+            return true
+        end
+
+        function SimpleUI.ThemeManager:RegisterMultiple(Window, Elements)
+            local EH = SimpleUI.ErrorHandler
+            if not Window then
+                EH:Guard(false, "ThemeManager:RegisterMultiple", "Window is nil", EH.Levels.WARN)
+                return false
+            end
+            if not EH:ValidateType(Elements, "table", "Elements", "ThemeManager:RegisterMultiple") then
+                return false
+            end
+            for Element, Bindings in pairs(Elements) do
+                EH:Try(function()
+                    self:RegisterElement(Window, Element, Bindings)
+                end)
+            end
+            return true
+        end
+
+        function SimpleUI.ThemeManager:ApplyToElement(Element, Property, ThemeKey, Theme, Animate)
+            local EH = SimpleUI.ErrorHandler
+            if not Element or not Element.Parent then
+                return false
+            end
+            if type(ThemeKey) == "function" then
+                return EH:Try(function()
+                    ThemeKey(Element, Theme)
+                    return true
+                end, function()
+                    return false
+                end)
+            end
+            if not EH:ValidateType(Property, "string", "Property", "ThemeManager:ApplyToElement") then
+                return false
+            end
+            local Value = Theme[ThemeKey]
+            if Value == nil then
+                EH:Guard(false, "ThemeManager:ApplyToElement",
+                    string.format("Theme key '%s' not found", tostring(ThemeKey)), EH.Levels.WARN)
+                return false
+            end
+            return EH:Try(function()
+                if Animate and (Property:find("Color") or Property:find("Transparency")) then
+                    TweenService:Create(Element,
+                        TweenInfo.new(SimpleUI.Constants.Animation.Normal, Enum.EasingStyle.Quad), {
+                            [Property] = Value
+                        }):Play()
+                else
+                    Element[Property] = Value
+                end
+                return true
+            end, function()
+                EH:Guard(false, "ThemeManager:ApplyToElement", string.format("Failed to apply property '%s'", Property),
+                    EH.Levels.WARN)
+                return false
+            end)
+        end
+
+        function SimpleUI.ThemeManager:SetTheme(Window, ThemeName, Animate)
+            local EH = SimpleUI.ErrorHandler
+            if not Window or not Window.ThemeData then
+                EH:Guard(false, "ThemeManager:SetTheme", "Invalid window", EH.Levels.ERROR)
+                return false
+            end
+            if not EH:ValidateType(ThemeName, "string", "ThemeName", "ThemeManager:SetTheme") then
+                return false
+            end
+            local NewTheme = SimpleUI.Themes[ThemeName]
+            if not NewTheme then
+                EH:Guard(false, "ThemeManager:SetTheme", string.format("Theme '%s' not found", ThemeName),
+                    EH.Levels.ERROR)
+                return false
+            end
+            Window.ThemeData.CurrentTheme = NewTheme
+            Window.Theme = NewTheme
+            local alive = {}
+            for _, Entry in ipairs(Window.ThemeData.Elements) do
+                if Entry.Element and Entry.Element.Parent then
+                    table.insert(alive, Entry)
+                end
+            end
+            Window.ThemeData.Elements = alive
+            local ProcessedElements = {}
+            for _, Entry in ipairs(Window.ThemeData.Elements) do
+                local Element = Entry.Element
+                local Property = Entry.Property
+                ProcessedElements[Element] = ProcessedElements[Element] or {}
+                if not ProcessedElements[Element][Property] then
+                    ProcessedElements[Element][Property] = true
+                    EH:Try(function()
+                        if type(Entry.ThemeKey) == "function" then
+                            Entry.ThemeKey(Element, NewTheme)
+                        else
+                            self:ApplyToElement(Element, Property, Entry.ThemeKey, NewTheme, Animate)
+                        end
+                    end)
+                end
+            end
+            return true
+        end
+
+        function SimpleUI.ThemeManager:GetThemeName(Window)
+            local EH = SimpleUI.ErrorHandler
+            if not Window or not Window.ThemeData then
+                EH:Guard(false, "ThemeManager:GetThemeName", "Invalid window, defaulting to Secondary", EH.Levels.WARN)
+                return "Secondary"
+            end
+            for Name, Theme in pairs(SimpleUI.Themes) do
+                if Theme == Window.ThemeData.CurrentTheme then
+                    return Name
+                end
+            end
+            EH:Guard(false, "ThemeManager:GetThemeName", "Theme not found in registry, defaulting to Secondary",
+                EH.Levels.WARN)
+            return "Secondary"
+        end
+    end
+
+    SimpleUI.ScrollManager = {}
+    do
+        function SimpleUI.ScrollManager:Update(Container)
+            local EH = SimpleUI.ErrorHandler
+            if not Container or not Container.Parent then
+                return Container
+            end
+            if not (Container:IsA("Frame") or Container:IsA("ScrollingFrame")) then
+                EH:Guard(false, "ScrollManager:Update", "Container must be Frame or ScrollingFrame", EH.Levels.WARN)
+                return Container
+            end
+            local Layout = Container:FindFirstChildWhichIsA("UIListLayout")
+            if not Layout then
+                return Container
+            end
+            local Parent = Container.Parent
+            if not Parent then
+                return Container
+            end
+            local ContentHeight = Layout.AbsoluteContentSize.Y
+            local AvailableHeight = Container.AbsoluteSize.Y
+            local NeedsScrolling = ContentHeight > AvailableHeight
+            local IsScrollFrame = Container:IsA("ScrollingFrame")
+            if NeedsScrolling and not IsScrollFrame then
+                local ScrollFrame = SimpleUI.Utility:CreateInstance("ScrollingFrame", {
+                    Name = Container.Name,
+                    Position = Container.Position,
+                    Size = Container.Size,
+                    AnchorPoint = Container.AnchorPoint,
+                    BackgroundColor3 = Container.BackgroundColor3,
+                    BackgroundTransparency = Container.BackgroundTransparency,
+                    BorderSizePixel = 0,
+                    BorderMode = Enum.BorderMode.Inset,
+                    ZIndex = Container.ZIndex,
+                    LayoutOrder = Container.LayoutOrder,
+                    Visible = Container.Visible,
+                    ClipsDescendants = true,
+                    ScrollBarThickness = 0,
+                    ScrollBarImageColor3 = Color3.fromRGB(200, 200, 200),
+                    ScrollBarImageTransparency = 1,
+                    ScrollingDirection = Enum.ScrollingDirection.Y,
+                    AutomaticCanvasSize = Enum.AutomaticSize.Y,
+                    CanvasSize = UDim2.new(0, 0, 0, 0),
+                    ElasticBehavior = Enum.ElasticBehavior.WhenScrollable,
+                    ScrollingEnabled = true,
+                    Active = true
+                }, Parent)
+                for _, Child in ipairs(Container:GetChildren()) do
+                    Child.Parent = ScrollFrame
+                end
+                local ScreenGui = Parent
+                while ScreenGui and not ScreenGui:IsA("ScreenGui") do
+                    ScreenGui = ScreenGui.Parent
+                end
+                if ScreenGui and SimpleUI.Windows[ScreenGui] then
+                    local Window = SimpleUI.Windows[ScreenGui]
+                    if Window.Elements and Window.Elements.Pages then
+                        for PageName, Page in pairs(Window.Elements.Pages) do
+                            if Page == Container then
+                                Window.Elements.Pages[PageName] = ScrollFrame
+                                break
+                            end
+                        end
+                    end
+                    if Window.ActivePage == Container then
+                        Window.ActivePage = ScrollFrame
+                    end
+                    if Window.Elements.TabsContainer == Container then
+                        Window.Elements.TabsContainer = ScrollFrame
+                    end
+                end
+                Container:Destroy()
+                Container = ScrollFrame
+            elseif not NeedsScrolling and IsScrollFrame then
+                Container.ScrollBarThickness = 0
+            elseif NeedsScrolling and IsScrollFrame then
+                Container.ScrollBarImageTransparency = 1
+            end
+            if Layout and not Layout:GetAttribute("ScrollUpdateHooked") then
+                Layout:SetAttribute("ScrollUpdateHooked", true)
