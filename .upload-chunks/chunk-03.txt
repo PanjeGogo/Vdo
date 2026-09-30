@@ -1,0 +1,1000 @@
+                local UpdateQueued = false
+                local LastContentSize = Layout.AbsoluteContentSize
+                Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                    if UpdateQueued or Layout.AbsoluteContentSize == LastContentSize then
+                        return
+                    end
+                    LastContentSize = Layout.AbsoluteContentSize
+                    UpdateQueued = true
+                    task.defer(function()
+                        UpdateQueued = false
+                        if Container and Container.Parent then
+                            SimpleUI.ScrollManager:Update(Container)
+                        end
+                    end)
+                end)
+            end
+            return Container
+        end
+    end
+
+    SimpleUI.WindowControlBuilder = {}
+    do
+        function SimpleUI.WindowControlBuilder:Create(ControlType, Style, Parent, Index, TotalControls)
+            local Config = SimpleUI.WindowControls[Style]
+            if not Config then
+                return
+            end
+            local IconData = Config.Icons and Config.Icons[ControlType] or {}
+            local Alignment = Config.Alignment or "Right"
+            local BaseColor = Config.Colors and Config.Colors[ControlType] or Color3.fromRGB(45, 45, 45)
+            local Spacing = Config.ButtonSpacing or 0
+            local IsMobile = SimpleUI.Utility:IsMobile()
+            local Position = Alignment == "Left" and
+                                 UDim2.new(0, Index * (Config.ButtonSize.X.Offset + Spacing), 0.5, 0) or
+                                 UDim2.new(1, -(TotalControls - Index) * (Config.ButtonSize.X.Offset + Spacing), 0.5, 0)
+            local Button = SimpleUI.Utility:CreateInstance("TextButton", {
+                Name = ControlType .. "Button",
+                Size = Config.ButtonSize,
+                Position = Position,
+                AnchorPoint = Vector2.new(0, 0.5),
+                BackgroundColor3 = BaseColor,
+                BackgroundTransparency = Config.Transparency or 0,
+                Text = "",
+                BorderSizePixel = 0,
+                ClipsDescendants = true,
+                AutoButtonColor = false,
+                ZIndex = SimpleUI.Constants.ZIndex.Control
+            }, Parent)
+            if Config.UseImages and IconData.Image then
+                SimpleUI.Utility:CreateInstance("ImageLabel", {
+                    Size = IconData.Size or UDim2.new(0, 12, 0, 12),
+                    Position = UDim2.new(0.5, 0, 0.5, 0),
+                    AnchorPoint = Vector2.new(0.5, 0.5),
+                    BackgroundTransparency = 1,
+                    Image = IconData.Image,
+                    ImageColor3 = IconData.Color or Color3.fromRGB(255, 255, 255),
+                    ZIndex = SimpleUI.Constants.ZIndex.Control + 1
+                }, Button)
+            end
+            SimpleUI.Utility:CreateInstance("UICorner", {
+                CornerRadius = Alignment == "Left" and UDim.new(1, 0) or UDim.new(0, 0)
+            }, Button)
+            if not IsMobile then
+                if IconData.HoverColor then
+                    local IsHovering = false
+                    Button.MouseEnter:Connect(function()
+                        IsHovering = true
+                        Button.BackgroundColor3 = IconData.HoverColor
+                    end)
+                    Button.MouseLeave:Connect(function()
+                        IsHovering = false
+                        Button.BackgroundColor3 = BaseColor
+                    end)
+                    if IconData.PressedColor then
+                        Button.Activated:Connect(function()
+                            Button.BackgroundColor3 = IconData.PressedColor
+                            task.wait(0.1)
+                            Button.BackgroundColor3 = IsHovering and IconData.HoverColor or BaseColor
+                        end)
+                    end
+                end
+            elseif IconData.PressedColor then
+                Button.Activated:Connect(function()
+                    Button.BackgroundColor3 = IconData.PressedColor
+                    task.wait(0.1)
+                    Button.BackgroundColor3 = BaseColor
+                end)
+            end
+            self:BindActions(Button, ControlType, Parent)
+            return Button
+        end
+
+        function SimpleUI.WindowControlBuilder:BindActions(Button, ControlType, TopBar)
+            local EH = SimpleUI.ErrorHandler
+            local ParentFrame = TopBar.Parent
+            if not ParentFrame or not TopBar then
+                EH:Guard(false, "WindowControlBuilder:BindActions", "Invalid frame references", EH.Levels.ERROR)
+                return
+            end
+            if ControlType == "Close" then
+                Button.Activated:Connect(function()
+                    local ScreenGui = ParentFrame.Parent.Parent
+                    if not ScreenGui then
+                        return
+                    end
+
+                    local FadeDuration = SimpleUI.Constants.Animation.Slow
+                    local TweenInfo = TweenInfo.new(FadeDuration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                    local Tweens = {}
+
+                    for _, Object in ipairs(ScreenGui:GetDescendants()) do
+                        if Object:IsA("GuiObject") then
+                            local Properties = {
+                                Position = UDim2.new(Object.Position.X.Scale - 1.5, Object.Position.X.Offset,
+                                    Object.Position.Y.Scale, Object.Position.Y.Offset)
+                            }
+
+                            if Object:IsA("Frame") or Object:IsA("ScrollingFrame") or Object:IsA("TextButton") or
+                                Object:IsA("TextLabel") then
+                                Properties.BackgroundTransparency = 1
+                            end
+                            if Object:IsA("TextButton") or Object:IsA("TextLabel") then
+                                Properties.TextTransparency = 1
+                            end
+                            if Object:IsA("ImageLabel") or Object:IsA("ImageButton") then
+                                Properties.ImageTransparency = 1
+                            end
+
+                            table.insert(Tweens, TweenService:Create(Object, TweenInfo, Properties))
+                        end
+                    end
+
+                    for _, Tween in ipairs(Tweens) do
+                        Tween:Play()
+                    end
+
+                    task.delay(FadeDuration, function()
+                        SimpleUI.Windows[ScreenGui] = nil
+                        ScreenGui:Destroy()
+                    end)
+                end)
+            end
+            if ControlType == "Maximize" then
+                Button.Activated:Connect(function()
+                    local ScreenGui = ParentFrame.Parent.Parent
+                    if not ScreenGui then
+                        return
+                    end
+                    local MainFrame = ScreenGui:FindFirstChild("MainFrame")
+                    if not MainFrame then
+                        return
+                    end
+                    if not MainFrame:GetAttribute("OriginalSize") then
+                        MainFrame:SetAttribute("OriginalSize", MainFrame.Size)
+                        MainFrame:SetAttribute("OriginalPosition", MainFrame.Position)
+                        MainFrame:SetAttribute("OriginalAnchorPoint", MainFrame.AnchorPoint)
+                    end
+                    local IsMaximized = MainFrame:GetAttribute("Maximized") or false
+                    MainFrame:SetAttribute("Maximized", not IsMaximized)
+
+                    local TargetSize, TargetPosition, TargetAnchor
+                    if not IsMaximized then
+                        TargetSize = UDim2.new(0.95, 0, 0.95, 0)
+                        TargetPosition = UDim2.new(0.5, 0, 0.5, 0)
+                        TargetAnchor = Vector2.new(0.5, 0.5)
+                    else
+                        TargetSize = MainFrame:GetAttribute("OriginalSize")
+                        TargetPosition = MainFrame:GetAttribute("OriginalPosition")
+                        TargetAnchor = MainFrame:GetAttribute("OriginalAnchorPoint")
+                    end
+
+                    MainFrame.AnchorPoint = TargetAnchor
+                    TweenService:Create(MainFrame, TweenInfo.new(SimpleUI.Constants.Animation.Normal,
+                        Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        Size = TargetSize,
+                        Position = TargetPosition
+                    }):Play()
+                end)
+            end
+        end
+
+        function SimpleUI.WindowControlBuilder:RegisterIconBindings(Window, ControlButtons, Options)
+            local ControlStyle = Options.ControlStyle or "Windows"
+            local Config = SimpleUI.WindowControls[ControlStyle]
+            if not Config or not Config.Icons then
+                return
+            end
+            local CurrentTheme = SimpleUI.ThemeManager:GetCurrentTheme(Window)
+            for ControlType, Button in pairs(ControlButtons) do
+                local IconData = Config.Icons[ControlType]
+                if IconData and IconData.ColorKey then
+                    local Icon = Button:FindFirstChildWhichIsA("ImageLabel")
+                    if Icon then
+                        local ColorValue = CurrentTheme[IconData.ColorKey]
+                        if ColorValue then
+                            Icon.ImageColor3 = ColorValue
+                        end
+                        SimpleUI.ThemeManager:RegisterElement(Window, Icon, {
+                            ImageColor3 = function(Element, Theme)
+                                local NewColorValue = Theme[IconData.ColorKey]
+                                if NewColorValue then
+                                    Element.ImageColor3 = NewColorValue
+                                end
+                            end
+                        })
+                    end
+                end
+            end
+        end
+    end
+
+    SimpleUI.ComponentBuilder = {}
+    do
+        function SimpleUI.ComponentBuilder:CreateContainer(Config, Theme)
+            if not SimpleUI.ErrorHandler:ValidateInstance(Config.Parent, "GuiObject", "ComponentBuilder:CreateContainer") then
+                return nil
+            end
+            local IsDualScroll = Config.Parent:GetAttribute("IsDualScroll") or false
+            local Container = SimpleUI.Utility:CreateInstance("Frame", {
+                Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.Y,
+                BackgroundColor3 = Theme[Config.ColorTier or "Secondary"],
+                BackgroundTransparency = Theme.TransparencySecondary,
+                BorderSizePixel = 0,
+                ZIndex = SimpleUI.Constants.ZIndex.Control
+            }, Config.Parent)
+            if Config.MinHeight then
+                SimpleUI.Utility:CreateInstance("UISizeConstraint", {
+                    MinSize = Vector2.new(0, Config.MinHeight)
+                }, Container)
+            end
+            if Config.CornerRadius then
+                SimpleUI.Utility:CreateInstance("UICorner", {
+                    CornerRadius = UDim.new(0, Config.CornerRadius)
+                }, Container)
+            end
+            local Padding = Config.Padding or {}
+            if type(Padding) == "number" then
+                Padding = {
+                    Top = Padding,
+                    Bottom = Padding,
+                    Left = Padding,
+                    Right = Padding
+                }
+            end
+            if type(Padding) == "table" then
+                for key, value in pairs(Padding) do
+                    if type(value) ~= "number" then
+                        Padding[key] = SimpleUI.Constants.Padding.Medium
+                    end
+                end
+            end
+            SimpleUI.Utility:CreateInstance("UIPadding", {
+                PaddingTop = UDim.new(0, Padding.Top or SimpleUI.Constants.Padding.Medium),
+                PaddingBottom = UDim.new(0, Padding.Bottom or SimpleUI.Constants.Padding.Medium),
+                PaddingLeft = UDim.new(0, Padding.Left or SimpleUI.Constants.Padding.Large),
+                PaddingRight = UDim.new(0, IsDualScroll and -8 or (Padding.Right or SimpleUI.Constants.Padding.Medium))
+            }, Container)
+            local TextZone, InteractiveZone, Layout
+            if Config.Layout == "TextLeft" then
+                TextZone = SimpleUI.Utility:CreateInstance("Frame", {
+                    Size = UDim2.new(Config.TextWidth or 0.65, 0, 1, 0),
+                    Position = UDim2.new(0, 0, 0, 0),
+                    BackgroundTransparency = 1,
+                    ZIndex = SimpleUI.Constants.ZIndex.Overlay
+                }, Container)
+                Layout = SimpleUI.Utility:CreateInstance("UIListLayout", {
+                    FillDirection = Enum.FillDirection.Vertical,
+                    HorizontalAlignment = Enum.HorizontalAlignment.Left,
+                    VerticalAlignment = Config.HasDescription and Enum.VerticalAlignment.Top or
+                        Enum.VerticalAlignment.Center,
+                    SortOrder = Enum.SortOrder.LayoutOrder,
+                    Padding = UDim.new(0, SimpleUI.Constants.Spacing.Relaxed)
+                }, TextZone)
+                InteractiveZone = Container
+            elseif Config.Layout == "Stacked" then
+                local ContentFrame = SimpleUI.Utility:CreateInstance("Frame", {
+                    Size = UDim2.new(1, 0, 0, 0),
+                    AutomaticSize = Enum.AutomaticSize.Y,
+                    BackgroundTransparency = 1,
+                    ZIndex = SimpleUI.Constants.ZIndex.Overlay
+                }, Container)
+                Layout = SimpleUI.Utility:CreateInstance("UIListLayout", {
+                    FillDirection = Enum.FillDirection.Vertical,
+                    HorizontalAlignment = Enum.HorizontalAlignment.Left,
+                    VerticalAlignment = Enum.VerticalAlignment.Top,
+                    SortOrder = Enum.SortOrder.LayoutOrder,
+                    Padding = UDim.new(0, Config.Spacing or SimpleUI.Constants.Spacing.Normal)
+                }, ContentFrame)
+                if not Config.HasDescription then
+                    ContentFrame.Position = UDim2.new(0, 0, 0.5, 0)
+                    ContentFrame.AnchorPoint = Vector2.new(0, 0.5)
+                end
+                TextZone = ContentFrame
+                InteractiveZone = ContentFrame
+            else
+                TextZone = Container
+                InteractiveZone = Container
+            end
+            return {
+                Container = Container,
+                TextZone = TextZone,
+                InteractiveZone = InteractiveZone,
+                Layout = Layout
+            }
+        end
+
+        function SimpleUI.ComponentBuilder:CreateLabel(Parent, Text, Theme, Config)
+            Config = Config or {}
+            if Config and
+                not SimpleUI.ErrorHandler:ValidateType(Config, "table", "Config", "ComponentBuilder:CreateLabel") then
+                Config = {}
+            end
+            return SimpleUI.Utility:CreateInstance("TextLabel", {
+                Size = UDim2.new(1, Config.WidthOffset or 0, 0, 0),
+                BackgroundTransparency = 1,
+                Text = Text or "",
+                TextColor3 = Theme[Config.ColorTier or "TextPrimary"],
+                TextSize = Config.Size or 14,
+                Font = Theme[Config.Font or "FontSecondary"],
+                TextXAlignment = Config.Align or Enum.TextXAlignment.Left,
+                TextWrapped = true,
+                AutomaticSize = Enum.AutomaticSize.Y,
+                LayoutOrder = Config.Order or 1,
+                ZIndex = SimpleUI.Constants.ZIndex.Overlay
+            }, Parent)
+        end
+
+        function SimpleUI.ComponentBuilder:CreateDescription(Parent, Text, Theme, Order)
+            if not Text or Text == "" then
+                return nil
+            end
+            return self:CreateLabel(Parent, Text, Theme, {
+                ColorTier = "TextSecondary",
+                Size = 14,
+                Order = Order or 2
+            })
+        end
+
+        function SimpleUI.ComponentBuilder:UpdateDescriptionPadding(Zones, HasDescription)
+            local Padding = Zones.Container:FindFirstChildOfClass("UIPadding")
+            if not Padding then
+                return
+            end
+            if HasDescription then
+                Padding.PaddingTop = UDim.new(0, SimpleUI.Constants.Padding.Large)
+                Padding.PaddingBottom = UDim.new(0, SimpleUI.Constants.Padding.Large)
+                if Zones.Layout then
+                    Zones.Layout.Padding = UDim.new(0, SimpleUI.Constants.Spacing.Tight)
+                end
+                if Zones.TextZone then
+                    Zones.TextZone.Position = UDim2.new(0, 0, 0, 0)
+                    Zones.TextZone.AnchorPoint = Vector2.new(0, 0)
+                end
+            else
+                Padding.PaddingTop = UDim.new(0, 0)
+                Padding.PaddingBottom = UDim.new(0, 0)
+                if Zones.Layout then
+                    Zones.Layout.Padding = UDim.new(0, 0)
+                end
+                if Zones.TextZone then
+                    Zones.TextZone.Position = UDim2.new(0, 0, 0.5, 0)
+                    Zones.TextZone.AnchorPoint = Vector2.new(0, 0.5)
+                end
+            end
+        end
+    end
+
+    SimpleUI.DropdownManager = {}
+    do
+        function SimpleUI.DropdownManager:NormalizeOptions(Options)
+            local EH = SimpleUI.ErrorHandler
+            if not EH:ValidateType(Options, "table", "Options", "DropdownManager:NormalizeOptions") then
+                return {}, {}
+            end
+            local Normalized = {}
+            local DataMap = {}
+            for Index, Option in ipairs(Options) do
+                if type(Option) == "table" then
+                    local DisplayText = Option.Text or Option.text or Option.Label or Option.label or tostring(Option)
+                    Normalized[Index] = DisplayText
+                    DataMap[DisplayText] = Option
+                else
+                    Normalized[Index] = tostring(Option)
+                    DataMap[tostring(Option)] = Option
+                end
+            end
+            return Normalized, DataMap
+        end
+
+        function SimpleUI.DropdownManager:InitializeSelection(DefaultValue, IsMultiSelect, DataMap)
+            local EH = SimpleUI.ErrorHandler
+            if IsMultiSelect then
+                local Selected = {}
+                if type(DefaultValue) == "table" then
+                    if not EH:ValidateType(DefaultValue, "table", "DefaultValue", "DropdownManager:InitializeSelection") then
+                        return Selected
+                    end
+                    for _, Value in ipairs(DefaultValue) do
+                        local Normalized = type(Value) == "table" and
+                                               (Value.Text or Value.text or Value.Label or Value.label or
+                                                   tostring(Value)) or tostring(Value)
+                        if DataMap[Normalized] then
+                            Selected[Normalized] = true
+                        end
+                    end
+                end
+                return Selected
+            else
+                if DefaultValue then
+                    local Normalized = type(DefaultValue) == "table" and
+                                           (DefaultValue.Text or DefaultValue.text or DefaultValue.Label or
+                                               DefaultValue.label or tostring(DefaultValue)) or tostring(DefaultValue)
+                    return DataMap[Normalized] and Normalized or nil
+                end
+                return nil
+            end
+        end
+
+        function SimpleUI.DropdownManager:GetSelectedData(Selection, IsMultiSelect, DataMap)
+            if IsMultiSelect then
+                local Selected = {}
+                for Value, Enabled in pairs(Selection) do
+                    if Enabled then
+                        table.insert(Selected, DataMap[Value])
+                    end
+                end
+                return Selected
+            else
+                return DataMap[Selection]
+            end
+        end
+
+        function SimpleUI.DropdownManager:UpdateDisplayText(DisplayLabel, Selection, IsMultiSelect)
+            local EH = SimpleUI.ErrorHandler
+            if not DisplayLabel or not DisplayLabel.Parent then
+                EH:Guard(false, "DropdownManager:UpdateDisplayText", "Invalid DisplayLabel", EH.Levels.WARN)
+                return
+            end
+            EH:Try(function()
+                if IsMultiSelect then
+                    local Selected = {}
+                    for Value, Enabled in pairs(Selection) do
+                        if Enabled then
+                            table.insert(Selected, Value)
+                        end
+                    end
+                    DisplayLabel.Text = #Selected > 0 and table.concat(Selected, ", ") or "Select"
+                else
+                    DisplayLabel.Text = Selection or "Select"
+                end
+            end)
+        end
+    end
+
+    SimpleUI.WindowBuilder = {}
+    do
+        function SimpleUI.WindowBuilder:CreateMainFrame(ScreenGui, Options, Theme)
+            local MainFrameProperties, MainFrameBindings = SimpleUI.Utility:ApplyTheme({
+                Name = "MainFrame",
+                AnchorPoint = Vector2.new(0.5, 0.5),
+                Active = true,
+                AutoButtonColor = false,
+                Position = Options.Position or UDim2.new(0.5, 0, 0.5, 0),
+                Size = Options.Size or UDim2.new(0, 650, 0, 600),
+                Text = "",
+                BorderSizePixel = 0,
+                ClipsDescendants = false
+            }, {
+                BackgroundColor3 = "Primary",
+                BackgroundTransparency = "TransparencyPrimary"
+            }, Theme)
+            local MainFrame = SimpleUI.Utility:CreateInstance("TextButton", MainFrameProperties, ScreenGui)
+            SimpleUI.Utility:CreateInstance("UICorner", {
+                CornerRadius = UDim.new(0, SimpleUI.Constants.Corner.Large)
+            }, MainFrame)
+            SimpleUI.Utility:CreateInstance("UISizeConstraint", {
+                MinSize = Options.MinSize or SimpleUI.Constants.Window.MinSize,
+                MaxSize = Options.MaxSize or SimpleUI.Constants.Window.MaxSize
+            }, MainFrame)
+            local UIScale = SimpleUI.Utility:CreateInstance("UIScale", {
+                Name = "WindowScale",
+                Scale = Options.DefaultScale or SimpleUI.Constants.Window.DefaultScale
+            }, MainFrame)
+            return MainFrame, UIScale, MainFrameBindings
+        end
+
+        function SimpleUI.WindowBuilder:CreateTopBar(Parent, Options, Theme)
+            local TopBarHeight = Options.TopBarHeight or SimpleUI.Constants.Window.TopBarHeight
+            local TopBar = SimpleUI.Utility:CreateInstance("Frame", {
+                Name = "TopBar",
+                Size = UDim2.new(1, 0, 0, TopBarHeight),
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                ZIndex = SimpleUI.Constants.ZIndex.Base,
+                ClipsDescendants = false,
+                Active = true
+            }, Parent)
+            local Sep
+            local SepBindings
+            local SepProps
+            if Options.TopBarSeparator ~= false then
+                SepProps, SepBindings = SimpleUI.Utility:ApplyTheme({
+                    Name = "TopBarSeparator",
+                    AnchorPoint = Vector2.new(0, 1),
+                    Position = UDim2.new(0, 0, 1, 0),
+                    Size = UDim2.new(1, 0, 0, 1),
+                    BorderSizePixel = 0,
+                    ZIndex = TopBar.ZIndex + 1
+                }, {
+                    BackgroundColor3 = "Separator",
+                    BackgroundTransparency = "SeparatorTransparency"
+                }, Theme)
+                Sep = SimpleUI.Utility:CreateInstance("Frame", SepProps, TopBar)
+            end
+            return TopBar, Sep, SepBindings
+        end
+
+        function SimpleUI.WindowBuilder:CreateTitleSection(TopBar, Options, Theme)
+            local ControlStyle = Options.ControlStyle or "Windows"
+            local HasBrand = Options.Brand ~= nil
+            local BrandName = HasBrand and Options.Brand.Name or ""
+            local BrandIcon = HasBrand and Options.Brand.Icon or nil
+
+            local BaseLeftOffset = 10
+            local IconSize = 40
+            local IconGap = 12
+
+            local BrandIconElement = nil
+            local BrandInitialElement = nil
+
+            if HasBrand then
+                if BrandIcon and type(BrandIcon) == "table" and BrandIcon.Image then
+                    local IconData = SimpleUI.IconManager:WrapIcon(BrandIcon)
+                    BrandIconElement = SimpleUI.Utility:CreateInstance("ImageLabel", {
+                        Name = "BrandIcon",
+                        Size = UDim2.new(0, IconSize, 0, IconSize),
+                        Position = UDim2.new(0, BaseLeftOffset, 0.5, 0),
+                        AnchorPoint = Vector2.new(0, 0.5),
+                        BackgroundTransparency = 1,
+                        Image = IconData.Url,
+                        ImageColor3 = Theme.TextPrimary,
+                        ScaleType = Enum.ScaleType.Fit,
+                        BorderSizePixel = 0,
+                        ZIndex = SimpleUI.Constants.ZIndex.Content + 1
+                    }, TopBar)
+                else
+                    local Initials = BrandName:sub(1, 1):upper()
+                    BrandInitialElement = SimpleUI.Utility:CreateInstance("TextLabel", {
+                        Name = "BrandInitial",
+                        Size = UDim2.new(0, IconSize, 0, IconSize),
+                        Position = UDim2.new(0, BaseLeftOffset, 0.5, 0),
+                        AnchorPoint = Vector2.new(0, 0.5),
+                        BackgroundTransparency = 1,
+                        Text = Initials,
+                        TextColor3 = Theme.TextPrimary,
+                        Font = Enum.Font.GothamBold,
+                        TextSize = 42,
+                        BorderSizePixel = 0,
+                        ZIndex = SimpleUI.Constants.ZIndex.Content
+                    }, TopBar)
+                end
+            end
+
+            local BrandTitleLabel = nil
+            if HasBrand and BrandName and BrandName ~= "" then
+                BrandTitleLabel = SimpleUI.Utility:CreateInstance("TextLabel", {
+                    Name = "BrandTitle",
+                    Size = UDim2.new(0, 0, 0, 0),
+                    AutomaticSize = Enum.AutomaticSize.XY,
+                    Position = UDim2.new(0, BaseLeftOffset + IconSize + IconGap, 0.5, 0),
+                    AnchorPoint = Vector2.new(0, 0.5),
+                    BackgroundTransparency = 1,
+                    Text = BrandName,
+                    TextColor3 = Theme.TextPrimary,
+                    Font = Theme.FontPrimary,
+                    TextSize = 16,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
+                    TextTransparency = 1,
+                    ZIndex = SimpleUI.Constants.ZIndex.Content
+                }, TopBar)
+
+                SimpleUI.Utility:CreateInstance("UISizeConstraint", {
+                    MaxSize = Vector2.new(200, math.huge)
+                }, BrandTitleLabel)
+            end
+
+            local TabInfoContainer = SimpleUI.Utility:CreateInstance("Frame", {
+                Name = "TabInfoContainer",
+                Position = UDim2.new(0, 0, 0.5, 0),
+                AnchorPoint = Vector2.new(0, 0.5),
+                Size = UDim2.new(0, 0, 0.7, 0),
+                AutomaticSize = Enum.AutomaticSize.X,
+                BackgroundTransparency = 1,
+                ZIndex = SimpleUI.Constants.ZIndex.Content,
+                ClipsDescendants = true,
+                Visible = true
+            }, TopBar)
+
+            SimpleUI.Utility:CreateInstance("UIPadding", {
+                PaddingLeft = UDim.new(0, 12),
+                PaddingRight = UDim.new(0, 200)
+            }, TabInfoContainer)
+
+            SimpleUI.Utility:CreateInstance("UIListLayout", {
+                FillDirection = Enum.FillDirection.Vertical,
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                VerticalAlignment = Enum.VerticalAlignment.Center,
+                HorizontalAlignment = Enum.HorizontalAlignment.Left,
+                Padding = UDim.new(0, 2)
+            }, TabInfoContainer)
+
+            local TabNameLabel = SimpleUI.Utility:CreateInstance("TextLabel", {
+                Name = "TabNameLabel",
+                Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.Y,
+                BackgroundTransparency = 1,
+                Text = "Select Tab",
+                TextColor3 = Theme.TextPrimary,
+                Font = Theme.FontPrimary,
+                TextSize = 16,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextTruncate = Enum.TextTruncate.AtEnd,
+                LayoutOrder = 1,
+                ZIndex = SimpleUI.Constants.ZIndex.Content
+            }, TabInfoContainer)
+
+            local TabDescLabel = SimpleUI.Utility:CreateInstance("TextLabel", {
+                Name = "TabDescLabel",
+                Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.Y,
+                BackgroundTransparency = 1,
+                Text = "",
+                TextColor3 = Theme.TextSecondary,
+                Font = Theme.FontSecondary,
+                TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextTruncate = Enum.TextTruncate.AtEnd,
+                LayoutOrder = 2,
+                ZIndex = SimpleUI.Constants.ZIndex.Content
+            }, TabInfoContainer)
+
+            local ControlsContainer = SimpleUI.Utility:CreateInstance("Frame", {
+                Name = "ControlsContainer",
+                Position = UDim2.new(1, -10, 0.5, 0),
+                AnchorPoint = Vector2.new(1, 0.5),
+                Size = UDim2.new(0, 100, 0.7, 0),
+                BackgroundTransparency = 1,
+                ZIndex = SimpleUI.Constants.ZIndex.Content,
+                ClipsDescendants = false
+            }, TopBar)
+
+            return TabInfoContainer, ControlsContainer, TabNameLabel, TabDescLabel, BrandIconElement,
+                BrandInitialElement, BrandTitleLabel
+        end
+
+        function SimpleUI.WindowBuilder:CreateWindowControls(ControlsContainer, Options, Theme)
+            local ControlStyle = Options.ControlStyle or "Windows"
+            local Controls = Options.WindowControls or
+                                 (ControlStyle == "Windows" and {"Maximize", "Close"} or {"Close", "Maximize"})
+            local ControlButtons = {}
+            if Controls then
+                for Index, ControlType in ipairs(Controls) do
+                    local Button = SimpleUI.WindowControlBuilder:Create(ControlType, ControlStyle, ControlsContainer,
+                        Index - 1, #Controls)
+                    if Button then
+                        ControlButtons[ControlType] = Button
+                    end
+                end
+            end
+            return ControlButtons
+        end
+
+        function SimpleUI.WindowBuilder:CreateContentAreas(MainContainer, MainFrame, TopBar, Options)
+            local Const = SimpleUI.Constants.Window
+            local TabsWidth = Const.TabsWidthOpen
+            local ContentWidth = Const.ContentWidthOpen
+            local IsCollapsed = Options.IsCollapsed
+            local HorizontalPadding = IsCollapsed and 4 or Options.HorizontalPadding or Const.HorizontalPadding
+            local HasBrand = Options.Brand ~= nil
+
+            local TabsContainer = SimpleUI.Utility:CreateInstance("ScrollingFrame", {
+                Name = "TabsContainer",
+                Position = UDim2.new(0, HorizontalPadding, 0, 0),
+                Size = UDim2.new(TabsWidth, -(HorizontalPadding * 1.5), 1, 0),
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                ZIndex = SimpleUI.Constants.ZIndex.Content,
+                ClipsDescendants = true,
+                ScrollingDirection = Enum.ScrollingDirection.Y,
+                ScrollBarThickness = 0,
+                CanvasSize = UDim2.new(0, 0, 0, 0),
+                AutomaticCanvasSize = Enum.AutomaticSize.Y
+            }, MainContainer)
+            SimpleUI.Utility:CreateInstance("UIListLayout", {
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                HorizontalAlignment = Enum.HorizontalAlignment.Center,
+                Padding = UDim.new(0, SimpleUI.Constants.Padding.Large)
+            }, TabsContainer)
+            SimpleUI.Utility:CreateInstance("UIPadding", {
+                PaddingTop = UDim.new(0, 0),
+                PaddingBottom = UDim.new(0, 0),
+                PaddingLeft = UDim.new(0, 2),
+                PaddingRight = UDim.new(0, 1)
+            }, TabsContainer)
+            local Theme = SimpleUI.ThemeManager:GetCurrentTheme({
+                ThemeData = {
+                    CurrentTheme = SimpleUI.Themes.DefaultTheme
+                }
+            })
+            local TabsSeparatorProperties, TabsSeparatorBindings = SimpleUI.Utility:ApplyTheme({
+                Name = "TabsSeparator",
+                Position = UDim2.new(TabsWidth, Const.TabSeparatorGap, 0, HasBrand and 0 or Const.TopBarHeight),
+                Size = UDim2.new(0, 1, 1, HasBrand and 0 or -Const.TopBarHeight),
+                BorderSizePixel = 0,
+                ZIndex = SimpleUI.Constants.ZIndex.Content
+            }, {
+                BackgroundColor3 = "Separator",
+                BackgroundTransparency = "SeparatorTransparency"
+            }, Theme)
+            local TabsSeparator = SimpleUI.Utility:CreateInstance("Frame", TabsSeparatorProperties, MainFrame)
+            local ContentsContainer = SimpleUI.Utility:CreateInstance("Frame", {
+                Name = "ContentsContainer",
+                Position = UDim2.new(TabsWidth, HorizontalPadding, 0, 0),
+                Size = UDim2.new(ContentWidth, -(HorizontalPadding * 2), 1, 0),
+                BorderSizePixel = 0,
+                BackgroundTransparency = 1,
+                ZIndex = SimpleUI.Constants.ZIndex.Content,
+                ClipsDescendants = true
+            }, MainContainer)
+            SimpleUI.Utility:CreateInstance("UIPadding", {
+                PaddingBottom = UDim.new(0, SimpleUI.Constants.Padding.Large),
+                PaddingLeft = UDim.new(0, SimpleUI.Constants.Padding.Large),
+                PaddingRight = UDim.new(0, SimpleUI.Constants.Padding.Large)
+            }, ContentsContainer)
+            return TabsContainer, ContentsContainer, TabsSeparator, TabsSeparatorBindings
+        end
+
+        function SimpleUI.WindowBuilder:CreateMainContainer(Parent, Options, Theme, TopBarHeight, FooterHeight)
+            local VerticalPadding = Options.VerticalPadding or SimpleUI.Constants.Window.VerticalPadding
+            local FooterOffset = (FooterHeight and FooterHeight > 0) and -(Options.FooterOverlap or 0) or 0
+            local MainContainer = SimpleUI.Utility:CreateInstance("Frame", {
+                Name = "MainContainer",
+                Position = UDim2.new(0, 0, 0, TopBarHeight),
+                Size = UDim2.new(1, 0, 1, -(TopBarHeight + FooterOffset)),
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                ZIndex = SimpleUI.Constants.ZIndex.Base,
+                ClipsDescendants = true
+            }, Parent)
+            if Options.AcrylicEffect then
+                local Blur = SimpleUI.Utility:CreateInstance("Frame", {
+                    Name = "BlurBackground",
+                    Size = UDim2.new(1, 0, 1, 0),
+                    Position = UDim2.new(0, 0, 0, 0),
+                    BackgroundTransparency = 0.3,
+                    BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                    BorderSizePixel = 0,
+                    ZIndex = SimpleUI.Constants.ZIndex.Background
+                }, MainContainer)
+                SimpleUI.Utility:CreateInstance("UICorner", {
+                    CornerRadius = UDim.new(0, SimpleUI.Constants.Corner.Large)
+                }, Blur)
+                pcall(function()
+                    local BlurEffect = Instance.new("BlurEffect")
+                    BlurEffect.Size = 24
+                    BlurEffect.Parent = Lighting
+                end)
+            end
+            SimpleUI.Utility:CreateInstance("UIPadding", {
+                PaddingTop = UDim.new(0, VerticalPadding),
+                PaddingBottom = UDim.new(0, VerticalPadding),
+                PaddingLeft = UDim.new(0, 0),
+                PaddingRight = UDim.new(0, 0)
+            }, MainContainer)
+            return MainContainer
+        end
+
+        function SimpleUI.WindowBuilder:SetupDragging(TopBar, MainFrame)
+            local IsDragging = false
+            local DragStart
+            local StartPosition
+            TopBar.InputBegan:Connect(function(Input)
+                if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType ==
+                    Enum.UserInputType.Touch then
+                    IsDragging = true
+                    DragStart = Input.Position
+                    StartPosition = MainFrame.Position
+                    Input:GetPropertyChangedSignal("UserInputState"):Connect(function()
+                        if Input.UserInputState == Enum.UserInputState.End then
+                            IsDragging = false
+                        end
+                    end)
+                end
+            end)
+            UserInputService.InputEnded:Connect(function(Input)
+                if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType ==
+                    Enum.UserInputType.Touch then
+                    IsDragging = false
+                end
+            end)
+            UserInputService.InputChanged:Connect(function(Input)
+                if IsDragging and
+                    (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType ==
+                        Enum.UserInputType.Touch) then
+                    local CurrentPosition = Input.Position
+                    local Delta = CurrentPosition - DragStart
+                    MainFrame.Position = UDim2.new(StartPosition.X.Scale, StartPosition.X.Offset + Delta.X,
+                        StartPosition.Y.Scale, StartPosition.Y.Offset + Delta.Y)
+                end
+            end)
+        end
+
+        function SimpleUI.WindowBuilder:CreateFooter(Parent, Options, Theme)
+            if not Options.Footer then
+                return nil, {}, nil
+            end
+            local FooterHeight = Options.FooterHeight or 20
+            local FooterOverlap = Options.FooterOverlap or -10
+            local FooterProperties, FooterBindings = SimpleUI.Utility:ApplyTheme({
+                Name = "Footer",
+                Position = UDim2.new(0, 0, 1, FooterOverlap),
+                AnchorPoint = Vector2.new(0, 0),
+                Size = UDim2.new(1, 0, 0, FooterHeight),
+                BorderSizePixel = 0,
+                ZIndex = SimpleUI.Constants.ZIndex.Overlay,
+                ClipsDescendants = false
+            }, {
+                BackgroundColor3 = "Secondary",
+                BackgroundTransparency = "TransparencyPrimary"
+            }, Theme)
+            local Footer = SimpleUI.Utility:CreateInstance("Frame", FooterProperties, Parent)
+            SimpleUI.Utility:CreateInstance("UICorner", {
+                CornerRadius = UDim.new(0, SimpleUI.Constants.Corner.Large)
+            }, Footer)
+            local SeparatorBindings = {}
+            if Options.FooterSeparator ~= false then
+                local SepProps, SepBindings = SimpleUI.Utility:ApplyTheme({
+                    Name = "FooterSeparator",
+                    Position = UDim2.new(0, 0, 1, FooterOverlap),
+                    Size = UDim2.new(1, 0, 0, 1),
+                    BorderSizePixel = 0,
+                    ZIndex = Footer.ZIndex + 1
+                }, {
+                    BackgroundColor3 = "Separator",
+                    BackgroundTransparency = "SeparatorTransparency"
+                }, Theme)
+                local Separator = SimpleUI.Utility:CreateInstance("Frame", SepProps, Parent)
+                if SepBindings then
+                    SeparatorBindings = {
+                        Element = Separator,
+                        Bindings = SepBindings
+                    }
+                end
+            end
+            local ContentFrame = SimpleUI.Utility:CreateInstance("Frame", {
+                Name = "FooterContent",
+                Position = UDim2.new(0, 0, 0, 0),
+                Size = UDim2.new(1, Options.CanResize and -24 or 0, 1, 0),
+                BackgroundTransparency = 1,
+                ZIndex = Footer.ZIndex + 1
+            }, Footer)
+            SimpleUI.Utility:CreateInstance("UIPadding", {
+                PaddingLeft = UDim.new(0, SimpleUI.Constants.Padding.Large),
+                PaddingRight = UDim.new(0, SimpleUI.Constants.Padding.Large),
+                PaddingTop = UDim.new(0, SimpleUI.Constants.Padding.Medium),
+                PaddingBottom = UDim.new(0, SimpleUI.Constants.Padding.Medium)
+            }, ContentFrame)
+            SimpleUI.Utility:CreateInstance("UIListLayout", {
+                FillDirection = Enum.FillDirection.Horizontal,
+                HorizontalAlignment = Options.FooterAlignment or Enum.HorizontalAlignment.Center,
+                VerticalAlignment = Enum.VerticalAlignment.Center,
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Padding = UDim.new(0, SimpleUI.Constants.Spacing.Normal)
+            }, ContentFrame)
+            local ResizeContainer
+            if Options.CanResize then
+                ResizeContainer = SimpleUI.Utility:CreateInstance("Frame", {
+                    Name = "FooterResizeArea",
+                    AnchorPoint = Vector2.new(1, 1),
+                    Position = UDim2.new(1, 1, 1, 1),
+                    Size = UDim2.fromOffset(20, 20),
+                    BackgroundTransparency = 1,
+                    ZIndex = Footer.ZIndex + 3
+                }, Footer)
+            end
+            return Footer, FooterBindings, ContentFrame, SeparatorBindings, ResizeContainer
+        end
+
+        function SimpleUI.WindowBuilder:PopulateFooter(Window, Options, Theme)
+            if not Window.Elements.FooterContent or not Options.FooterItems then
+                return
+            end
+            for _, Item in ipairs(Options.FooterItems) do
+                if Item.Type == "Text" then
+                    local TextProperties, TextBindings = SimpleUI.Utility:ApplyTheme({
+                        Name = Item.Name or "FooterText",
+                        LayoutOrder = Item.Order or 1,
+                        Size = UDim2.new(0, 0, 1, 0),
+                        AutomaticSize = Enum.AutomaticSize.X,
+                        BackgroundTransparency = 1,
+                        Text = Item.Text or "",
+                        TextSize = Item.TextSize or 14,
+                        TextXAlignment = Enum.TextXAlignment.Left,
+                        ZIndex = Window.Elements.Footer.ZIndex + 2
+                    }, {
+                        Font = "FontSecondary",
+                        TextColor3 = Item.ColorTier or "TextSecondary"
+                    }, Theme)
+                    local Label = SimpleUI.Utility:CreateInstance("TextLabel", TextProperties,
+                        Window.Elements.FooterContent)
+                    if Item.Id then
+                        Window.Elements[Item.Id] = Label
+                    end
+                    if TextBindings then
+                        SimpleUI.ThemeManager:RegisterElement(Window, Label, TextBindings)
+                    end
+                elseif Item.Type == "Button" then
+                    local ButtonProperties, ButtonBindings = SimpleUI.Utility:ApplyTheme({
+                        Name = Item.Name or Item.Text or "FooterButton",
+                        LayoutOrder = Item.Order or 1,
+                        Size = UDim2.new(0, Item.Width or 80, 1, -8),
+                        Text = Item.Text or "Button",
+                        TextSize = Item.TextSize or 14,
+                        BorderSizePixel = 0,
+                        AutoButtonColor = false,
+                        ZIndex = Window.Elements.Footer.ZIndex + 2
+                    }, {
+                        Font = "FontSecondary",
+                        TextColor3 = "TextPrimary",
+                        BackgroundColor3 = "Tertiary"
+                    }, Theme)
+                    local Button = SimpleUI.Utility:CreateInstance("TextButton", ButtonProperties,
+                        Window.Elements.FooterContent)
+                    SimpleUI.Utility:CreateInstance("UICorner", {
+                        CornerRadius = UDim.new(0, SimpleUI.Constants.Corner.Medium)
+                    }, Button)
+                    if not SimpleUI.Utility:IsMobile() then
+                        Button.MouseEnter:Connect(function()
+                            TweenService:Create(Button, TweenInfo.new(0.15), {
+                                BackgroundColor3 = Theme.TertiaryHover
+                            }):Play()
+                        end)
+                        Button.MouseLeave:Connect(function()
+                            TweenService:Create(Button, TweenInfo.new(0.15), {
+                                BackgroundColor3 = Theme.Tertiary
+                            }):Play()
+                        end)
+                    end
+                    if Item.Callback then
+                        Button.Activated:Connect(function()
+                            TweenService:Create(Button, TweenInfo.new(0.1), {
+                                BackgroundColor3 = Theme.TertiaryPressed
+                            }):Play()
+                            task.wait(0.1)
+                            TweenService:Create(Button, TweenInfo.new(0.1), {
+                                BackgroundColor3 = Theme.Tertiary
+                            }):Play()
+                            SimpleUI.ErrorHandler:Try(Item.Callback)
+                        end)
+                    end
+                    if Item.Id then
+                        Window.Elements[Item.Id] = Button
+                    end
+                    if ButtonBindings then
+                        SimpleUI.ThemeManager:RegisterElement(Window, Button, ButtonBindings)
+                    end
+                elseif Item.Type == "Spacer" then
+                    SimpleUI.Utility:CreateInstance("Frame", {
+                        Name = "Spacer",
+                        LayoutOrder = Item.Order or 1,
+                        Size = UDim2.new(0, Item.Width or 10, 1, 0),
+                        BackgroundTransparency = 1
+                    }, Window.Elements.FooterContent)
+                end
+            end
+        end
+
+        function SimpleUI.WindowBuilder:SetupResizing(MainFrame, UIScale, Options, ResizeParent, ResizeMode, Theme)
+            if not Options.CanResize or not ResizeParent then
+                return nil, nil
+            end
+
+            local IsCenter = ResizeMode == SimpleUI.Constants.Window.ResizeModes.Center
+
+            local ResizeHandle = SimpleUI.Utility:CreateInstance("TextButton", {
+                Name = "ResizeHandle",
+                Size = UDim2.fromOffset(16, 16),
+                Position = UDim2.fromScale(1, 1),
+                AnchorPoint = Vector2.new(1, 1),
+                BackgroundTransparency = 0.8,
+                BackgroundColor3 = Color3.fromRGB(100, 100, 110),
+                BorderSizePixel = 0,
+                Text = "",
+                AutoButtonColor = false,
+                ZIndex = SimpleUI.Constants.ZIndex.Modal
+            }, ResizeParent)
+
+            SimpleUI.Utility:CreateInstance("UICorner", {
